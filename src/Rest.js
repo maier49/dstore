@@ -25,10 +25,12 @@ define([
 		//		want to use an alternate parse function for the parsing of data as well.
 		stringify: null,
 
-		_initialize: function() {
-			this.stringify = JSON.stringify;
+		constructor: function() {
 			this.autoEmitEvents = false;
-			this.inherited(arguments);
+			this.stringify = JSON.stringify;
+			this.autoEmitHandles.forEach(function (handle) {
+				handle.destroy();
+			});
 		},
 
 		_getTarget: function(id){
@@ -110,8 +112,7 @@ define([
 				var result = event.target = response && store._restore(store.parse(response), true) || object;
 
 				when(initialResponse.response, function (httpResponse) {
-					event.type = httpResponse.status === 201 ? 'add' : 'update';
-					store.emit(event);
+					store._emit(httpResponse.status === 201 ? 'add' : 'update', event);
 				});
 
 				return result;
@@ -146,11 +147,7 @@ define([
 				headers: lang.mixin({}, this.headers, options.headers)
 			}).then(function (response) {
 				var target = response && store.parse(response);
-				store.emit({
-					id: id,
-					target: target,
-					type: 'delete'
-				});
+				store._emit('delete', { id: id, target: target });
 				return response ? target : true;
 			});
 		}
