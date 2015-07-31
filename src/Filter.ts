@@ -1,31 +1,28 @@
+import { Hash } from 'dojo-core/interfaces';
 export interface FilterArgs {
 	[ name: string ]: Filter | RegExp | string | (() => boolean);
 }
 
-export default class Filter {
-	[index: string]: any;
+export default class Filter implements Hash<any> {
+	[ index: string ]: any;
 	type: string;
 	args: any[];
 
-	constructor();
-	constructor(filterArg: string);
-	constructor(filterArg: () => any);
-	constructor(filterArg: FilterArgs);
-	constructor(filterArg?: any) {
+	constructor(filterArg?: string | (() => any) | FilterArgs) {
 		if (typeof filterArg === 'string' || typeof filterArg === 'function') {
 			this.type = typeof filterArg;
 			this.args = [filterArg];
 		}
 		else if (filterArg) {
-			var filter = this;
+			let filter = this;
 			// construct a filter based on the query object
-			for (var key in filterArg) {
-				var value = filterArg[key];
+			for (let key in filterArg) {
+				const value = (<FilterArgs> filterArg)[key];
 				if (value instanceof Filter) {
 					// fully construct the filter from the single arg
 					filter = filter[value.type](key, value.args[0]);
 				}
-				else if ((<any>value) && typeof (<any>value).test === 'function') {
+				else if (value && typeof (<any> value).test === 'function') {
 					// support regex and functions
 					filter = filter.match(key, value);
 				}
@@ -39,7 +36,7 @@ export default class Filter {
 	}
 
 	protected _createFilter(key: any, target: any, type: string) {
-		var filter = new Filter();
+		const filter = new Filter();
 		filter.type = type;
 		filter.args = [key, target];
 		if (this instanceof Filter && this.type) {
@@ -50,11 +47,11 @@ export default class Filter {
 	}
 
 	protected _createLogicalFilter(type: string, args: Array<Filter | string>): Filter {
-		let argsArray = args.map((arg) => {
-			return arg instanceof Filter ? arg : new Filter(<string>arg);
+		const argsArray = args.map((arg) => {
+			return arg instanceof Filter ? arg : new Filter(arg);
 		});
 
-		var filter = new Filter();
+		const filter = new Filter();
 		filter.type = type;
 		filter.args = argsArray;
 		if (this.type === type) {

@@ -15,7 +15,7 @@ class Model {
 		lang.mixin(this, {
 			_restore: function (Constructor: { new (arg: any): { restored: boolean } }) {
 				// use constructor based restoration
-				var restored = new Constructor(this);
+				const restored = new Constructor(this);
 				restored.restored = true;
 				return restored;
 			},
@@ -25,7 +25,7 @@ class Model {
 
 	_restore(Constructor: { new (arg: any): { restored: boolean } }) {
 		// use constructor based restoration
-		var restored = new Constructor(this);
+		const restored = new Constructor(this);
 		restored.restored = true;
 		return restored;
 	}
@@ -37,6 +37,19 @@ class Model {
 	}
 }
 
+let store: Request<any>;
+
+const globalHeaders: { [ name: string ]: string } = {
+
+	'test-global-header-a': 'true',
+	'test-global-header-b': 'yes'
+};
+const requestHeaders: { [ name: string ]: string } = {
+	'test-local-header-a': 'true',
+	'test-local-header-b': 'yes',
+	'test-override': 'overridden'
+};
+
 function runHeaderTest(method: string, args: any[]) {
 	return store[method].apply(store, args).then(function () {
 		mockRequestProvider.assertRequestHeaders(requestHeaders);
@@ -45,22 +58,22 @@ function runHeaderTest(method: string, args: any[]) {
 }
 
 function runCollectionTest<T>(collection: dstore.Collection<T>, rangeArgs: dstore.FetchRangeArgs | RequestOptions, expected?: RequestOptions) {
-	var expectedResults: { [ name: string ]: number | string }[] = [
+	const expectedResults: { [ name: string ]: number | string }[] = [
 		{ id: 1, name: 'one' },
 		{ id: 2, name: 'two' }
 	];
 	mockRequestProvider.setResponseText(JSON.stringify(expectedResults));
-	var resultsPromise: dstore.FetchPromise<any>;
+	let resultsPromise: dstore.FetchPromise<any>;
 	if (!expected) {
-		expected = <RequestOptions>rangeArgs;
+		expected = <RequestOptions> rangeArgs;
 		resultsPromise = collection.fetch();
 	}
 	else {
-		const { start, end } = <dstore.FetchRangeArgs>rangeArgs;
+		const { start, end } = <dstore.FetchRangeArgs> rangeArgs;
 		mockRequestProvider.setResponseHeaders({
 			'Content-Range': start + '-' + end + '/' + expectedResults.length
 		});
-		resultsPromise = collection.fetchRange(<dstore.FetchRangeArgs>rangeArgs);
+		resultsPromise = collection.fetchRange(<dstore.FetchRangeArgs> rangeArgs);
 	}
 	return resultsPromise.then(function (results) {
 		expected.headers && mockRequestProvider.assertRequestHeaders(expected.headers);
@@ -69,42 +82,31 @@ function runCollectionTest<T>(collection: dstore.Collection<T>, rangeArgs: dstor
 		// We cannot just assert deepEqual with results and expectedResults
 		// because the store converts results into model instances with additional members.
 		assert.strictEqual(results.length, expectedResults.length);
-		for (var i = 0; i < results.length; ++i) {
-			var result: { [ name: string ]: number | string } = results[i];
-			var expectedResult: { [ name: string ]: number | string } = expectedResults[i];
-			for (var key in expectedResult) {
+		for (let i = 0; i < results.length; ++i) {
+			const result: { [ name: string ]: number | string } = results[i];
+			const expectedResult: { [ name: string ]: number | string } = expectedResults[i];
+			for (let key in expectedResult) {
 				assert.strictEqual(result[key], expectedResult[key]);
 			}
 		}
 		if (resultsPromise.totalLength instanceof Promise) {
-			return (<Promise<number>>resultsPromise.totalLength).then(function (totalLength) {
+			return (<Promise<number>> resultsPromise.totalLength).then(function (totalLength) {
 				assert.strictEqual(totalLength, expectedResults.length);
 			});
 		}
 	});
 }
 
-var globalHeaders: { [ name: string ]: string } = {
 
-	'test-global-header-a': 'true',
-	'test-global-header-b': 'yes'
-};
-var requestHeaders: { [ name: string ]: string } = {
-	'test-local-header-a': 'true',
-	'test-local-header-b': 'yes',
-	'test-override': 'overridden'
-};
-var store: Request<any>;
-
-var registryHandle: Handle;
-var treeTestRootData: string;
+let registryHandle: Handle;
+let treeTestRootData: string;
 function createRequestTests(Store: new (options?: RequestStoreArgs) => Request<any>) {
 	return {
 		name: 'dstore Request',
 
 		before: function () {
 			registryHandle = providerRegistry.register(/.*mockRequest.*/, mockRequestProvider.respond);
-			return request.get((<any>require).toUrl('tests/unit/data/treeTestRoot')).then(function (response: any) {
+			return request.get((<any> require).toUrl('tests/unit/data/treeTestRoot')).then(function (response: any) {
 				treeTestRootData = response.data;
 			});
 		},
@@ -130,7 +132,7 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => Request<a
 			mockRequestProvider.setResponseText(treeTestRootData);
 
 			return store.filter<{ name: string, describe: () => string, someProperty: string }>('data/treeTestRoot').fetch().then(function (results) {
-				var object = results[0];
+				const object = results[0];
 				assert.strictEqual(object.name, 'node1');
 				assert.strictEqual(object.describe(), 'name is node1');
 				assert.strictEqual(object.someProperty, 'somePropertyA');
@@ -140,7 +142,7 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => Request<a
 		'filter iterative': function () {
 			mockRequestProvider.setResponseText(treeTestRootData);
 
-			var i = 0;
+			let i = 0;
 			return store.filter<{ name: string, describe: () => string }>('data/treeTestRoot').forEach(function (object) {
 				i++;
 				assert.strictEqual(object.name, 'node' + i);
@@ -150,13 +152,13 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => Request<a
 		},
 
 		'filter object': function () {
-			var filter = { prop1: 'Prop1Value', prop2: 'Prop2Value' };
+			const filter = { prop1: 'Prop1Value', prop2: 'Prop2Value' };
 			return runCollectionTest(store.filter(filter), { queryParams: filter });
 		},
 
 		'filter builder': function () {
-			var filter = new store.Filter();
-			var betweenTwoAndFour = filter.gt('id', 2).lt('price', 5);
+			const filter = new store.Filter();
+			const betweenTwoAndFour = filter.gt('id', 2).lt('price', 5);
 			return runCollectionTest(store.filter(betweenTwoAndFour), {
 				queryParams: {
 					id: 'gt=2',
@@ -166,8 +168,8 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => Request<a
 		},
 
 		'filter builder ne or': function () {
-			var filter = new store.Filter();
-			var betweenTwoAndFour = filter.ne('id', 2).or(filter.eq('foo', true), filter.eq('foo'));
+			const filter = new store.Filter();
+			const betweenTwoAndFour = filter.ne('id', 2).or(filter.eq('foo', true), filter.eq('foo'));
 			return runCollectionTest(store.filter(betweenTwoAndFour), {
 				queryParams: {
 					id: 'ne=2|foo=true|foo=undefined'
@@ -176,9 +178,9 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => Request<a
 		},
 
 		'filter relational': function () {
-			var filter = new store.Filter();
-			var innerFilter = new store.Filter().eq('foo', true);
-			var nestedFilter = filter[ 'in' ]('id', store.filter(innerFilter).select('id'));
+			const filter = new store.Filter();
+			const innerFilter = new store.Filter().eq('foo', true);
+			const nestedFilter = filter[ 'in' ]('id', store.filter(innerFilter).select('id'));
 			return runCollectionTest(store.filter(nestedFilter), {
 				queryParams: {
 					id: 'in=(/mockRequest/?foo=true&select(id))'
@@ -187,7 +189,7 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => Request<a
 		},
 
 		'sort': function () {
-			var sortedCollection = store.sort({
+			const sortedCollection = store.sort({
 				property: 'prop1',
 				descending: true
 			}, {
@@ -206,7 +208,7 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => Request<a
 		'sort with this.sortParam': function () {
 			store.sortParam = 'sort-param';
 
-			var sortedCollection = store.sort({
+			const sortedCollection = store.sort({
 				property: 'prop1',
 				descending: true
 			}, {
@@ -226,7 +228,7 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => Request<a
 			store.descendingPrefix = '--';
 			store.ascendingPrefix = '++';
 
-			var sortedCollection = store.sort({
+			const sortedCollection = store.sort({
 				property: 'prop1',
 				descending: true
 			}, {
@@ -242,7 +244,7 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => Request<a
 			});
 		},
 		'select': function () {
-			var selectCollection = store.select([ 'prop1', 'prop2' ]);
+			const selectCollection = store.select([ 'prop1', 'prop2' ]);
 			return runCollectionTest(selectCollection, {
 				queryParams: {
 					'select(prop1,prop2)': ''
@@ -251,7 +253,7 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => Request<a
 		},
 		'select with selectParam': function () {
 			store.selectParam = 'select-param';
-			var selectCollection = store.select([ 'prop1', 'prop2' ]);
+			const selectCollection = store.select([ 'prop1', 'prop2' ]);
 			return runCollectionTest(selectCollection, {
 				queryParams: {
 					'select-param': 'prop1,prop2'
@@ -294,8 +296,8 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => Request<a
 		},
 
 		'filter+sort+fetchRange': function () {
-			var filter = { prop1: 'Prop1Value', prop2: 'Prop2Value' };
-			var collection = store.filter(filter).sort('prop1');
+			const filter = { prop1: 'Prop1Value', prop2: 'Prop2Value' };
+			const collection = store.filter(filter).sort('prop1');
 			return runCollectionTest(collection, { start: 15, end: 25 }, {
 				queryParams: lang.mixin({}, filter, {
 					'limit(10,15)': '',

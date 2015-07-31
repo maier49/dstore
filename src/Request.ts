@@ -1,12 +1,13 @@
-import request, { Response } from 'dojo-core/request';
-import * as lang from 'dojo-core/lang';
 import * as arrayUtil from 'dojo-core/array';
+import * as lang from 'dojo-core/lang';
+import Promise from 'dojo-core/Promise';
+import request, { Response, ResponsePromise } from 'dojo-core/request';
 import Filter from './Filter';
 import * as dstore from './interfaces';
 import QueryResults from './QueryResults';
 import Store, { NewableStoreModel } from './Store';
 
-var push = [].push;
+const push = [].push;
 
 export interface RequestStoreArgs {
 	target?: string;
@@ -99,24 +100,25 @@ export default class Request<T> extends Store<T> implements dstore.Collection<T>
 		this.parse = this.parse || function (data: string) {
 			return JSON.parse(data);
 		};
-		this.headers || (this.headers = {});
+		this.headers = this.headers || {};
 		this.target = this.target || '';
 		this._targetContainsQueryString = this.target.lastIndexOf('?') >= 0;
 		this.ascendingPrefix = this.ascendingPrefix || '+';
 		this.descendingPrefix = this.descendingPrefix || '-';
 		this.accepts = this.accepts || 'application/json';
 		this.fetch = this.fetch || function (kwArgs?: dstore.FetchArgs) {
-			var results = this._request(kwArgs);
-			return <dstore.FetchPromise<any>>QueryResults(results.data, {
+			const results = this._request(kwArgs);
+			return <dstore.FetchPromise<any>> QueryResults(results.data, {
 				response: results.response
 			});
 		}
 	}
 
 	fetchRange(kwArgs: dstore.FetchRangeArgs) {
-		var start = kwArgs.start,
-			end = kwArgs.end,
-			requestArgs: dstore.FetchArgs = {};
+		const start = kwArgs.start;
+		const end = kwArgs.end;
+		const requestArgs: dstore.FetchArgs = {};
+
 		if (this.useRangeHeaders) {
 			requestArgs.headers = lang.mixin(this._renderRangeHeaders(start, end), kwArgs.headers);
 		} else {
@@ -126,45 +128,48 @@ export default class Request<T> extends Store<T> implements dstore.Collection<T>
 			}
 		}
 
-		var results = this._request(requestArgs);
-		return <dstore.FetchPromise<T>>QueryResults(results.data, {
+		const results = this._request(requestArgs);
+		return <dstore.FetchPromise<T>> QueryResults<T>(results.data, {
 			totalLength: results.total,
 			response: results.response
 		});
 	}
 
-	_request(kwArgs: dstore.FetchArgs) {
-		kwArgs = kwArgs || {};
-
+	_request(kwArgs: dstore.FetchArgs = {}) : {
+		data: dstore.FetchPromise<T>;
+		total: Promise<number>;
+		response: ResponsePromise<T>
+	} {
 		// perform the actual query
-		var headers: { [ name: string ]: string } = <{ [ name: string ]: string }>lang.mixin(Object.create(this.headers), { Accept: this.accepts });
+		const RequestHeader: { [ name: string ]: string } = null;
+		const headers = <typeof RequestHeader> lang.mixin(Object.create(this.headers), { Accept: this.accepts });
 
 		if ('headers' in kwArgs) {
 			lang.mixin(headers, kwArgs.headers);
 		}
 
-		var requestUrl = this._renderUrl(kwArgs.queryParams);
+		const requestUrl = this._renderUrl(kwArgs.queryParams);
 
-		var response = request(requestUrl, {
+		const response = request(requestUrl, {
 			method: 'GET',
 			headers: headers
 		});
-		var collection = this;
-		var parsedResponse = response.then(function (response: Response<string>) {
+		const collection = this;
+		const parsedResponse = response.then(function (response: Response<string>) {
 			return collection.parse(response.data);
 		});
 		return {
 			data: parsedResponse.then(function (data) {
 				// support items in the results
-				var results = data.items || data;
-				for (var i = 0, l = results.length; i < l; i++) {
+				const results = data.items || data;
+				for (let i = 0, l = results.length; i < l; i++) {
 					results[i] = collection._restore(results[i], true);
 				}
 				return results;
 			}),
 			total: parsedResponse.then(function (data) {
 				// check for a total property
-				var total = data.total;
+				const total = data.total;
 				if (total > -1) {
 					// if we have a valid positive number from the data,
 					// we can use that
@@ -172,7 +177,7 @@ export default class Request<T> extends Store<T> implements dstore.Collection<T>
 				}
 				// else use headers
 				return response.then(function (response) {
-					var rangeHeader = response.getHeader('Content-Range');
+					const rangeHeader = response.getHeader('Content-Range');
 					let rangeMatch: RegExpMatchArray;
 					let range: number;
 					if (rangeHeader && (rangeMatch = rangeHeader.match(/\/(.*)/)) && (range = Number(rangeMatch[1]))) {
@@ -186,13 +191,13 @@ export default class Request<T> extends Store<T> implements dstore.Collection<T>
 		};
 	}
 
-	_renderFilterParams(filter: Filter) {
+	_renderFilterParams(filter: Filter): string[] {
 		// summary:
 		//		Constructs filter-related params to be inserted into the query string
 		// returns: String
 		//		Filter-related params to be inserted in the query string
-		var type = filter.type;
-		var args = filter.args;
+		const type = filter.type;
+		const args = filter.args;
 		if (!type) {
 			return [''];
 		}
@@ -200,15 +205,17 @@ export default class Request<T> extends Store<T> implements dstore.Collection<T>
 			return [args[0]];
 		}
 		if (type === 'and' || type === 'or') {
-			return [filter.args.map(function (arg) {
+			const joinToken = type === 'and' ? '&' : '|';
+			const renderedArgs = args.map(function (arg) {
 				// render each of the arguments to and or or, then combine by the right operator
-				var renderedArg = this._renderFilterParams(arg);
+				const renderedArg = this._renderFilterParams(arg);
 				return ((arg.type === 'and' || arg.type === 'or') && arg.type !== type) ?
 					// need to observe precedence in the case of changing combination operators
-					'(' + renderedArg + ')' : renderedArg;
-			}, this).join(type === 'and' ? '&' : '|')];
+				'(' + renderedArg + ')' : renderedArg;
+			}, this);
+			return [renderedArgs.join(joinToken)];
 		}
-		var target = args[1];
+		let target = args[1];
 		if (target) {
 			if(target._renderUrl) {
 				// detected nested query, and render the url inside as an argument
@@ -217,35 +224,36 @@ export default class Request<T> extends Store<T> implements dstore.Collection<T>
 				target = '(' + target + ')';
 			}
 		}
-		return [encodeURIComponent(args[0]) + '=' + (type === 'eq' ? '' : type + '=') + encodeURIComponent(target)];
+		const encodedFilterArg = encodeURIComponent(args[0]);
+		const encodedFilterType = (type === 'eq' ? '' : type + '=');
+		const encodedTarget = encodeURIComponent(target);
+		return [encodedFilterArg + '=' +  encodedFilterType+ encodedTarget];
 	}
 
-	_renderSortParams(sort: dstore.SortOption[]) {
+	_renderSortParams(sort: dstore.SortOption[]): string[] {
 		// summary:
 		//		Constructs sort-related params to be inserted in the query string
 		// returns: String
 		//		Sort-related params to be inserted in the query string
-		var sortString = sort.map(function (sortOption: dstore.SortOption) {
-			var prefix = sortOption.descending ? this.descendingPrefix : this.ascendingPrefix;
+		const sortString = sort.map(function (sortOption: dstore.SortOption) {
+			const prefix = sortOption.descending ? this.descendingPrefix : this.ascendingPrefix;
 			return prefix + encodeURIComponent(sortOption.property);
 		}, this);
 
-		var params: string[] = [];
-		if (sortString) {
-			params.push(this.sortParam
+		const params: string[] = [];
+		params.push(this.sortParam
 				? encodeURIComponent(this.sortParam) + '=' + sortString
 				: 'sort(' + sortString + ')'
-			);
-		}
+		);
 		return params;
 	}
 
-	_renderRangeParams(start: number, end: number) {
+	_renderRangeParams(start: number, end: number): string[] {
 		// summary:
 		//		Constructs range-related params to be inserted in the query string
 		// returns: String
 		//		Range-related params to be inserted in the query string
-		var params: string[] = [];
+		const params: string[] = [];
 		if (this.rangeStartParam) {
 			params.push(
 				this.rangeStartParam + '=' + start,
@@ -257,12 +265,12 @@ export default class Request<T> extends Store<T> implements dstore.Collection<T>
 		return params;
 	}
 
-	_renderSelectParams(properties: string) {
+	_renderSelectParams(properties: string): string[] {
 		// summary:
 		//		Constructs select-related params to be inserted in the query string
 		// returns: String
 		//		Select-related params to be inserted in the query string
-		var params: string[] = [];
+		const params: string[] = [];
 		if (this.selectParam) {
 			params.push(this.selectParam + '=' + properties);
 		} else {
@@ -271,11 +279,11 @@ export default class Request<T> extends Store<T> implements dstore.Collection<T>
 		return params;
 	}
 
-	_renderQueryParams() {
-		var queryParams: Array<string| {}> = [];
+	_renderQueryParams(): string[] {
+		const queryParams: string[] = [];
 
 		this.queryLog.forEach(function (entry: dstore.QueryLogEntry<any>) {
-			var type = entry.type,
+			const type = entry.type,
 				renderMethod = '_render' + type[0].toUpperCase() + type.substr(1) + 'Params';
 
 			if (this[renderMethod]) {
@@ -288,13 +296,13 @@ export default class Request<T> extends Store<T> implements dstore.Collection<T>
 		return queryParams;
 	}
 
-	_renderUrl(requestParams: string | string[]) {
+	_renderUrl(requestParams: string | string[]): string {
 		// summary:
 		//		Constructs the URL used to fetch the data.
 		// returns: String
 		//		The URL of the data
-		var queryParams = this._renderQueryParams(),
-			requestUrl = this.target;
+		const queryParams = this._renderQueryParams();
+		let requestUrl = this.target;
 
 		if (requestParams) {
 			push.apply(queryParams, requestParams);
@@ -306,12 +314,12 @@ export default class Request<T> extends Store<T> implements dstore.Collection<T>
 		return requestUrl;
 	}
 
-	_renderRangeHeaders(start: number, end: number) {
+	_renderRangeHeaders(start: number, end: number): { Range: string; 'X-Range': string } {
 		// summary:
 		//		Applies a Range header if this collection incorporates a range query
 		// headers: Object
 		//		The headers to which a Range property is added
-		var value = 'items=' + start + '-' + (end - 1);
+		const value = 'items=' + start + '-' + (end - 1);
 		return {
 			'Range': value,
 			'X-Range': value //set X-Range for Opera since it blocks "Range" header

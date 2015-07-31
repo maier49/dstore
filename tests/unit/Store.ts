@@ -1,4 +1,4 @@
-import { EventObject } from 'dojo-core/interfaces';
+import { EventObject, Hash } from 'dojo-core/interfaces';
 import * as lang from 'dojo-core/lang';
 import Promise from 'dojo-core/Promise';
 import * as dstore from 'src/interfaces'
@@ -12,7 +12,7 @@ class NonDeclareBasedModel {
 	}
 	_restore(Constructor: { new (arg: any): { restored: boolean } }) {
 		// use constructor based restoration
-		var restored = new Constructor(this);
+		const restored = new Constructor(this);
 		restored.restored = true;
 		return restored;
 	}
@@ -24,7 +24,7 @@ class Model {
 		lang.mixin(this, {
 			_restore: function (Constructor: { new (arg: any): { restored: boolean } }) {
 				// use constructor based restoration
-				var restored = new Constructor(this);
+				const restored = new Constructor(this);
 				restored.restored = true;
 				return restored;
 			},
@@ -33,7 +33,7 @@ class Model {
 	}
 	_restore(Constructor: { new (arg: any): { restored: boolean } }) {
 		// use constructor based restoration
-		var restored = new Constructor(this);
+		const restored = new Constructor(this);
 		restored.restored = true;
 		return restored;
 	}
@@ -46,7 +46,7 @@ class Model {
 	}
 }
 
-var store: Store<any>;
+let store: Store<any>;
 registerSuite({
 	name: 'dstore Store',
 
@@ -56,21 +56,21 @@ registerSuite({
 
 	'getIdentity and _setIdentity': {
 		'direct property access and assignment'() {
-			var object: { [ index: string ]: any } = { id: 'default', 'custom-id': 'custom' };
+			const object: Hash<any> = { id: 'default', 'custom-id': 'custom' };
 
 			assert.strictEqual(store.getIdentity(object), 'default');
-			(<any>store)._setIdentity(object, 'assigned-id');
+			(<any> store)._setIdentity(object, 'assigned-id');
 			assert.strictEqual(object['id'], 'assigned-id');
 			assert.strictEqual(store.getIdentity(object), object['id']);
 
 			store.idProperty = 'custom-id';
 			assert.strictEqual(store.getIdentity(object), 'custom');
-			(<any>store)._setIdentity(object, 'assigned-id');
+			(<any> store)._setIdentity(object, 'assigned-id');
 			assert.strictEqual(object['custom-id'], 'assigned-id');
 			assert.strictEqual(store.getIdentity(object), object['custom-id']);
 		},
 		'getter and setter'() {
-			var object: { [ index: string ]: any } = {
+			const object: Hash<any> = {
 					_properties: {
 						id: 'default',
 						'custom-id': 'custom'
@@ -84,34 +84,34 @@ registerSuite({
 				};
 
 			assert.strictEqual(store.getIdentity(object), 'default');
-			(<any>store)._setIdentity(object, 'assigned-id');
+			(<any> store)._setIdentity(object, 'assigned-id');
 			assert.strictEqual(object['_properties'].id, 'assigned-id');
 			assert.strictEqual(store.getIdentity(object), object['_properties'].id);
 
 			store.idProperty = 'custom-id';
 			assert.strictEqual(store.getIdentity(object), 'custom');
-			(<any>store)._setIdentity(object, 'assigned-id');
+			(<any> store)._setIdentity(object, 'assigned-id');
 			assert.strictEqual(object['_properties']['custom-id'], 'assigned-id');
 			assert.strictEqual(store.getIdentity(object), object['_properties']['custom-id']);
 		}
 	},
 
 	'filter'() {
-		var filter1 = { prop1: 'one' };
-		var expectedQueryLog1: any[] = [ {
+		const filter1 = { prop1: 'one' };
+		const expectedQueryLog1: any[] = [ {
 				type: 'filter', arguments: [ filter1 ], normalizedArguments: [ {
 					type: 'eq',
 					args: ['prop1', 'one']
 				} ]
 			} ];
-		var filter2 = function filterFunc() {};
-		var	expectedQueryLog2: any[] = expectedQueryLog1.concat({
+		const filter2 = function filterFunc() {};
+		const	expectedQueryLog2: any[] = expectedQueryLog1.concat({
 				type: 'filter', arguments: [ filter2 ], normalizedArguments: [ {
 					type: 'function',
 					args: [filter2]
 				} ]
 			});
-		var filteredCollection: dstore.Collection<any> = store.filter(filter1);
+		let filteredCollection: dstore.Collection<any> = store.filter(filter1);
 		// deepEqual just won't work on the data in these
 		assert.equal(JSON.stringify(filteredCollection.queryLog), JSON.stringify(expectedQueryLog1));
 
@@ -120,30 +120,30 @@ registerSuite({
 	},
 
 	'sort'() {
-		var sortObject = { property: 'prop1', descending: true },
-			sortObjectArray = [ sortObject, { property: 'prop2' } ],
-			comparator = function comparator(a: any, b: any) {
-				return 0;
-			},
-			expectedQueryLog1: any[] = [ {
-				type: 'sort',
-				arguments: [ sortObject.property, sortObject.descending ],
-				normalizedArguments: [ [ sortObject ] ]
-			} ],
-			expectedQueryLog2: any[] = [ {
-				type: 'sort',
-				arguments: [ sortObject ],
-				normalizedArguments: [ [ sortObject ] ]
-			} ],
-			expectedQueryLog3: any[] = expectedQueryLog2.concat({
-				type: 'sort',
-				arguments: [ sortObjectArray ],
-				normalizedArguments: [ [ sortObject, lang.mixin({ descending: false }, sortObjectArray[1]) ] ]
-			}),
-			expectedQueryLog4 = expectedQueryLog3.concat({
-				type: 'sort', arguments: [ comparator ], normalizedArguments: [ comparator ]
-			}),
-			sortedCollection: dstore.Collection<any>;
+		const sortObject = { property: 'prop1', descending: true };
+		const sortObjectArray = [ sortObject, { property: 'prop2' } ];
+		const comparator = function comparator(a: any, b: any) {
+			return 0;
+		};
+		const expectedQueryLog1: any[] = [ {
+			type: 'sort',
+			arguments: [ sortObject.property, sortObject.descending ],
+			normalizedArguments: [ [ sortObject ] ]
+		} ];
+		const expectedQueryLog2: any[] = [ {
+			type: 'sort',
+			arguments: [ sortObject ],
+			normalizedArguments: [ [ sortObject ] ]
+		} ];
+		const expectedQueryLog3: any[] = expectedQueryLog2.concat({
+			type: 'sort',
+			arguments: [ sortObjectArray ],
+			normalizedArguments: [ [ sortObject, lang.mixin({ descending: false }, sortObjectArray[ 1 ]) ] ]
+		});
+		const expectedQueryLog4 = expectedQueryLog3.concat({
+			type: 'sort', arguments: [ comparator ], normalizedArguments: [ comparator ]
+		});
+		let sortedCollection: dstore.Collection<any>;
 
 		sortedCollection = store.sort(sortObject.property, sortObject.descending);
 		assert.deepEqual(sortedCollection.queryLog, expectedQueryLog1);
@@ -159,21 +159,21 @@ registerSuite({
 	},
 
 	'restore'() {
-		var store = new Store({
+		const store = new Store({
 			Model: NonDeclareBasedModel
 		});
-		var restoredObject = (<any>store)._restore({ foo: 'original' });
+		const restoredObject = (<any> store)._restore({ foo: 'original' });
 		assert.strictEqual(restoredObject.foo, 'original');
 		assert.strictEqual(restoredObject.restored, true);
 		assert.isTrue(restoredObject instanceof NonDeclareBasedModel);
 	},
 
 	events() {
-		var methodCalls: string[] = [],
+		const methodCalls: string[] = [],
 			events: string[] = [];
 
 		// rely on autoEventEmits
-		var store = new  Store();
+		const store = new  Store();
 		function countMethodCall(method: string, object: any) {
 			methodCalls.push(method);
 			return object;
@@ -203,7 +203,7 @@ registerSuite({
 	},
 
 	'events with beforeId'() {
-		var store = new Store(),
+		const store = new Store(),
 			beforeIds: Array<string | number> = [];
 
 		store.on('add', function (event) {
@@ -220,7 +220,7 @@ registerSuite({
 	},
 
 	'emit should catch errors thrown by listeners'() {
-		var store = new Store(),
+		const store = new Store(),
 			testEmit = lang.lateBind(store, 'emit', 'test-event');
 
 		assert.doesNotThrow(testEmit);
@@ -232,13 +232,13 @@ registerSuite({
 	},
 
 	forEach() {
-		var store = new Store<any>();
+		const store = new Store<any>();
 		store.fetch = function (args?: dstore.FetchArgs) {
 			return new Promise(function (resolve) {
 				resolve([ 0, 1, 2 ]);
 			});
 		};
-		var results: any[] = [];
+		const results: any[] = [];
 		return store.forEach(function (item: any, i: number, instance: any[]) {
 			assert.strictEqual(item, i);
 			results.push(item);
@@ -249,13 +249,13 @@ registerSuite({
 	},
 
 	'extends declare-based Model constructors and adds a _store reference on the prototype'() {
-		var store = new Store({ Model: Model });
+		const store = new Store({ Model: Model });
 		assert.notStrictEqual(store.Model, Model);
-		assert.isTrue((<any>store.Model).extended);
+		assert.isTrue((<any> store.Model).extended);
 	},
 
 	'does not extend Model constructors not based on declare'() {
-		var store = new Store({Model: NonDeclareBasedModel});
+		const store = new Store({Model: NonDeclareBasedModel});
 		assert.strictEqual(store.Model, NonDeclareBasedModel);
 	}
 });

@@ -1,8 +1,8 @@
 import * as arrayUtil from 'dojo-core/array';
 import * as aspect from 'dojo-core/aspect';
 import Evented from 'dojo-core/Evented';
-import { default as has, add } from 'dojo-core/has';
-import { EventObject, Handle } from 'dojo-core/interfaces';
+import { default as has, add as hasAdd } from 'dojo-core/has';
+import { EventObject, Handle, Hash } from 'dojo-core/interfaces';
 import * as lang from 'dojo-core/lang';
 import Promise from 'dojo-core/Promise';
 import Filter from './Filter';
@@ -16,8 +16,8 @@ import QueryMethod, { QueryMethodArgs } from './QueryMethod';
 // deoptimizations. The watch method is a clear indicator of the Firefox
 // JS engine.
 
-add('object-proto', Boolean((<any>{})['__proto__']) && !(<any>{}).watch);
-var hasProto = has('object-proto');
+hasAdd('object-proto', Boolean((<any> {})['__proto__']) && !(<any> {}).watch);
+const hasProto = has('object-proto');
 
 export interface NewableStoreModel {
 	new (args?: {}): any;
@@ -29,9 +29,8 @@ export interface StoreArgs {
 	Model?: NewableStoreModel;
 }
 
-export default class Store<T> extends Evented implements dstore.Collection<T> {
-	[index: string]: any;
-
+export default class Store<T> extends Evented implements dstore.Collection<T>, Hash<any> {
+	[ index: string ]: any;
 	// summary:
 	//		Creates an object, throws an error if the object already exists
 	// object: Object
@@ -113,7 +112,7 @@ export default class Store<T> extends Evented implements dstore.Collection<T> {
 
 	// queryLog: __QueryLogEntry[]
 	//		The query operations represented by this collection
-	queryLog: dstore.QueryLogEntry<any>[];
+	queryLog: dstore.QueryLogEntry<any> [];
 
 	storage: Evented;
 
@@ -154,11 +153,11 @@ export default class Store<T> extends Evented implements dstore.Collection<T> {
 
 		// the object the store can use for holding any local data or events
 		this.storage = new Evented();
-		var store = this;
+		const store = this;
 		if (this.autoEmitEvents) {
 			// emit events when modification operations are called
-			this.autoEmitHandles.push(aspect.after(this, 'add', <any>this._emitUpdateEvent('add')));
-			this.autoEmitHandles.push(aspect.after(this, 'put', <any>this._emitUpdateEvent('update')));
+			this.autoEmitHandles.push(aspect.after(this, 'add', <any> this._emitUpdateEvent('add')));
+			this.autoEmitHandles.push(aspect.after(this, 'put', <any> this._emitUpdateEvent('update')));
 			this.autoEmitHandles.push(aspect.after(this, 'remove', function (result, args) {
 				const emit = function (result: Promise<any> | any) {
 					store._emit('delete', {
@@ -195,12 +194,12 @@ export default class Store<T> extends Evented implements dstore.Collection<T> {
 
 	protected _emitUpdateEvent(type: string) {
 		return function (result: Promise<any> | any, args: {beforeId: string | number}[]) {
-			var self = this;
+			const self = this;
 			const emit = function (result: Promise<any> | any) {
-				var event: { [ index: string ]: any } = {
+				const event: Hash<any> = {
 					target: result
 				};
-				var	options = args[ 1 ] || <any>{};
+				const options = args[ 1 ] || <any> {};
 				if ('beforeId' in options) {
 					event['beforeId'] = options.beforeId;
 				}
@@ -219,7 +218,7 @@ export default class Store<T> extends Evented implements dstore.Collection<T> {
 	}
 
 	protected _createSubCollection(kwArgs: {}) {
-		let newCollection = <{ [ index: string ]: any }> (<any>Object).setPrototypeOf({}, this.constructor);
+		let newCollection = <Hash<any>> (<any> Object).setPrototypeOf({}, this.constructor);
 
 		for (let i in this) {
 			if (this._includePropertyInSubCollection(i, newCollection)) {
@@ -231,15 +230,15 @@ export default class Store<T> extends Evented implements dstore.Collection<T> {
 	}
 
 	protected _getQuerierFactory(type: string) {
-		var uppercaseType = type[0].toUpperCase() + type.substr(1);
+		const uppercaseType = type[0].toUpperCase() + type.substr(1);
 		return this['_create' + uppercaseType + 'Querier'];
 	}
 
-	protected _includePropertyInSubCollection(name: string, subCollection: { [ index: string ]: any }) {
+	protected _includePropertyInSubCollection(name: string, subCollection: Hash<any>) {
 		return !(name in subCollection) || subCollection[name] !== this[name];
 	}
 
-	protected _restore(object: { [ index: string ]: any }, mutateAllowed: boolean) {
+	protected _restore(object: Hash<any>, mutateAllowed: boolean) {
 		// summary:
 		//		Restores a plain raw object, making an instance of the store's model.
 		//		This is called when an object had been persisted into the underlying
@@ -264,10 +263,10 @@ export default class Store<T> extends Evented implements dstore.Collection<T> {
 		// returns: Object
 		//		An instance of the store model, with all the properties that were defined
 		//		on object. This may or may not be the same object that was passed in.
-		var Model = this.Model;
+		const Model = this.Model;
 		if (Model && object) {
-			var prototype = Model.prototype;
-			var restore = prototype._restore;
+			const prototype = Model.prototype;
+			const restore = prototype._restore;
 			if (restore) {
 				// the prototype provides its own restore method
 				object = restore.call(object, Model, mutateAllowed);
@@ -277,7 +276,7 @@ export default class Store<T> extends Evented implements dstore.Collection<T> {
 				object['__proto__'] = prototype;
 			} else {
 				// create a new object with the correct prototype
-				object = <{ [ index: string]: any }>lang.create(prototype, object, Model);
+				object = <Hash<any>> lang.create(prototype, object, Model);
 			}
 		}
 		return object;
@@ -316,10 +315,10 @@ export default class Store<T> extends Evented implements dstore.Collection<T> {
 	}
 
 	filter<T>(...args: any[]): dstore.Collection<T> {
-		return QueryMethod(<QueryMethodArgs<T>>{
+		return QueryMethod(<QueryMethodArgs<T>> {
 			type: 'filter',
 			normalizeArguments: function (filter) {
-				var Filter = this.Filter;
+				const Filter = this.Filter;
 				if (filter instanceof Filter) {
 					return [ filter ];
 				}
@@ -373,13 +372,13 @@ export default class Store<T> extends Evented implements dstore.Collection<T> {
 	}
 
 	select<T>(args: string | string[]) : dstore.Collection<T> {
-		return QueryMethod(<QueryMethodArgs<T>>{
+		return QueryMethod(<QueryMethodArgs<T>> {
 			type: 'select'
 		}).apply(this, [ args ]);
 	}
 
 	sort<T>(...args: any[]): dstore.Collection<T> {
-		return QueryMethod(<QueryMethodArgs<T>>{
+		return QueryMethod(<QueryMethodArgs<T>> {
 			type: 'sort',
 			normalizeArguments: function (property, descending) {
 				let sorted: any[];
@@ -399,7 +398,7 @@ export default class Store<T> extends Evented implements dstore.Collection<T> {
 
 					sorted = sorted.map(function (sort: { descending: boolean }) {
 						// copy the sort object to avoid mutating the original arguments
-						sort = <{ descending: boolean }>lang.mixin({}, sort);
+						sort = <{ descending: boolean }> lang.mixin({}, sort);
 						sort.descending = !!sort.descending;
 						return sort;
 					});
