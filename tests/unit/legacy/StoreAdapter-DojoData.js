@@ -60,7 +60,7 @@ define([
 		'filter': function () {
 			return all([
 				getResultsArray(store.filter({prime: true})).then(function (results) {
-					assert.strictEqual(length, 3);
+					assert.strictEqual(results.length, 3);
 				},
 				getResultsArray(store.filter({even: true})).then(function (results) {
 					assert.strictEqual(results[1].name, 'four');
