@@ -122,28 +122,7 @@ export default class Request<T> extends Store<T> implements dstore.Collection<T>
 		};
 	}
 
-	fetchRange(kwArgs: dstore.FetchRangeArgs) {
-		const start = kwArgs.start;
-		const end = kwArgs.end;
-		const requestArgs: dstore.FetchArgs = {};
-
-		if (this.useRangeHeaders) {
-			requestArgs.headers = lang.mixin(this._renderRangeHeaders(start, end), kwArgs.headers);
-		} else {
-			requestArgs.queryParams = this._renderRangeParams(start, end);
-			if (kwArgs.headers) {
-				requestArgs.headers = kwArgs.headers;
-			}
-		}
-
-		const results = this._request(requestArgs);
-		return <dstore.FetchPromise<T>> QueryResults<T>(results.data, {
-			totalLength: results.total,
-			response: results.response
-		});
-	}
-
-	_request(kwArgs: dstore.FetchArgs = {}): {
+	protected _request(kwArgs: dstore.FetchArgs = {}): {
 		data: dstore.FetchPromise<T>;
 		total: Promise<number>;
 		response: ResponsePromise<T>
@@ -205,7 +184,7 @@ export default class Request<T> extends Store<T> implements dstore.Collection<T>
 	 * @param filter The filter to render as part of a query string
 	 * @returns Filter-related params to be inserted in the query string
 	 */
-	_renderFilterParams(filter: Filter): string[] {
+	protected _renderFilterParams(filter: Filter): string[] {
 		const type = filter.type;
 		const args = filter.args;
 		if (!type) {
@@ -246,7 +225,7 @@ export default class Request<T> extends Store<T> implements dstore.Collection<T>
 	 * @param sort An array of sort options indicating to render as a query string
 	 * @return Sort-related params to be inserted in the query string
 	 */
-	_renderSortParams(sort: dstore.SortOption[]): string[] {
+	protected _renderSortParams(sort: dstore.SortOption[]): string[] {
 		const sortString = sort.map(function (sortOption: dstore.SortOption) {
 			const prefix = sortOption.descending ? this.descendingPrefix : this.ascendingPrefix;
 			return prefix + encodeURIComponent(sortOption.property);
@@ -267,7 +246,7 @@ export default class Request<T> extends Store<T> implements dstore.Collection<T>
 	 * @param end The end of the range
 	 * Range-related params to be inserted in the query string
 	 */
-	_renderRangeParams(start: number, end: number): string[] {
+	protected _renderRangeParams(start: number, end: number): string[] {
 		const params: string[] = [];
 		if (this.rangeStartParam) {
 			params.push(
@@ -286,7 +265,7 @@ export default class Request<T> extends Store<T> implements dstore.Collection<T>
 	 * @param properties Select-related params to be inserted in the query string
 	 * @return The rendered query string
 	 */
-	_renderSelectParams(properties: string): string[] {
+	protected _renderSelectParams(properties: string): string[] {
 		const params: string[] = [];
 		if (this.selectParam) {
 			params.push(this.selectParam + '=' + properties);
@@ -296,7 +275,7 @@ export default class Request<T> extends Store<T> implements dstore.Collection<T>
 		return params;
 	}
 
-	_renderQueryParams(): string[] {
+	protected _renderQueryParams(): string[] {
 		const queryParams: string[] = [];
 
 		this.queryLog.forEach(function (entry: dstore.QueryLogEntry<any>) {
@@ -319,7 +298,7 @@ export default class Request<T> extends Store<T> implements dstore.Collection<T>
 	 * @param requestParams A string or array of params to be rendered in the URL
 	 * @return The URL of the data
 	 */
-	_renderUrl(requestParams: string | string[]): string {
+	protected _renderUrl(requestParams: string | string[]): string {
 		const queryParams = this._renderQueryParams();
 		let requestUrl = this.target;
 
@@ -340,11 +319,32 @@ export default class Request<T> extends Store<T> implements dstore.Collection<T>
 	 * @param end The end of the range
 	 * @return The headers to which a Range property is added
 	 */
-	_renderRangeHeaders(start: number, end: number): { Range: string; 'X-Range': string } {
+	protected _renderRangeHeaders(start: number, end: number): { Range: string; 'X-Range': string } {
 		const value = 'items=' + start + '-' + (end - 1);
 		return {
 			'Range': value,
 			'X-Range': value // set X-Range for Opera since it blocks "Range" header
 		};
+	}
+
+	fetchRange(kwArgs: dstore.FetchRangeArgs) {
+		const start = kwArgs.start;
+		const end = kwArgs.end;
+		const requestArgs: dstore.FetchArgs = {};
+
+		if (this.useRangeHeaders) {
+			requestArgs.headers = lang.mixin(this._renderRangeHeaders(start, end), kwArgs.headers);
+		} else {
+			requestArgs.queryParams = this._renderRangeParams(start, end);
+			if (kwArgs.headers) {
+				requestArgs.headers = kwArgs.headers;
+			}
+		}
+
+		const results = this._request(requestArgs);
+		return <dstore.FetchPromise<T>> QueryResults<T>(results.data, {
+			totalLength: results.total,
+			response: results.response
+		});
 	}
 }

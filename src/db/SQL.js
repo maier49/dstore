@@ -322,7 +322,7 @@ define([
 						}
 						return ['(', parts.join(sqlOperators[filter.type]), ')'];
 					case 'in':
-						if (value.length === 0) {
+						if (!(typeof value === 'object') && value.length === 0) {
 							// an empty IN clause is considered invalid SQL
 							return '0=1';
 						} else if (value.generateSql) {

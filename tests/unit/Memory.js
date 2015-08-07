@@ -81,13 +81,12 @@ define([
 			var filter = new store.Filter();
 			assert.strictEqual(store.filter(filter.eq('prime', true)).fetchSync().length, 3);
 			var count = 0;
-			return store.filter(filter.eq('prime', true)).fetch().forEach(function (object) {
+			store.filter(filter.eq('prime', true)).fetchSync().forEach(function (object) {
 				count++;
 				assert.equal(object.prime, true);
-			}).then(function ()  {
-				assert.equal(count, 3);
-				assert.strictEqual(store.filter({ even: true }).fetchSync()[1].name, 'four');
 			});
+			assert.equal(count, 3);
+			assert.strictEqual(store.filter({even: true}).fetchSync()[1].name, 'four');
 		},
 
 		'async filter': function () {
@@ -167,14 +166,13 @@ define([
 		'filter with paging': function () {
 			assert.strictEqual(store.filter({prime: true}).fetchRangeSync({start: 1, end: 2}).length, 1);
 			var count = 0;
-			return store.filter({ prime: true }).fetchRange({ start: 1, end: 2 }).forEach(function (object) {
+			store.filter({prime: true}).fetchRangeSync({start: 1, end: 2}).forEach(function (object) {
 				count++;
 				assert.equal(object.prime, true);
-			}).then(function () {
-				assert.equal(count, 1);
-				assert.strictEqual(store.filter({prime: true}).fetchRangeSync({ start: 1, end: 2 }).totalLength, 3);
-				assert.strictEqual(store.filter({even: true}).fetchRangeSync({ start: 1, end: 2 })[0].name, 'four');
 			});
+			assert.equal(count, 1);
+			assert.strictEqual(store.filter({prime: true}).fetchRangeSync({start: 1, end: 2}).totalLength, 3);
+			assert.strictEqual(store.filter({even: true}).fetchRangeSync({start: 1, end: 2})[0].name, 'four');
 		},
 
 		'filter with string-named function': function () {

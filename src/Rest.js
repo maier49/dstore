@@ -26,11 +26,14 @@ define([
 		stringify: null,
 
 		constructor: function() {
-			this.autoEmitEvents = false;
+			// TODO - this is being initialized here because due to the way TS initializes variable the default on the
+			// prototype would be overridden
 			this.stringify = JSON.stringify;
-			this.autoEmitHandles.forEach(function (handle) {
-				handle.destroy();
-			});
+		},
+
+		_initialize: function() {
+			this.autoEmitEvents = false;
+			this.inherited(arguments);
 		},
 
 		_getTarget: function(id){
@@ -112,7 +115,8 @@ define([
 				var result = event.target = response && store._restore(store.parse(response), true) || object;
 
 				when(initialResponse.response, function (httpResponse) {
-					store._emit(httpResponse.status === 201 ? 'add' : 'update', event);
+					event.type = httpResponse.status === 201 ? 'add' : 'update';
+					store.emit(event);
 				});
 
 				return result;
@@ -147,7 +151,11 @@ define([
 				headers: lang.mixin({}, this.headers, options.headers)
 			}).then(function (response) {
 				var target = response && store.parse(response);
-				store._emit('delete', { id: id, target: target });
+				store.emit({
+					id: id,
+					target: target,
+					type: 'delete'
+				});
 				return response ? target : true;
 			});
 		}

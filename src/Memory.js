@@ -20,10 +20,11 @@ define([
 
 			// Add a version property so subcollections can detect when they're using stale data
 			this.storage.version = 0;
+		},
+
+		_initialize: function () {
 			this.autoEmitEvents = false;
-			this.autoEmitHandles.forEach(function (handle) {
-				handle.destroy();
-			});
+			this.inherited(arguments);
 		},
 
 		postscript: function () {
@@ -80,7 +81,10 @@ define([
 			storage.version++;
 
 			var eventType = id in index ? 'update' : 'add',
-				event = { target: object },
+				event = {
+					target: object,
+					type: eventType
+				},
 				previousIndex,
 				defaultDestination;
 			if (eventType === 'update') {
@@ -126,7 +130,7 @@ define([
 				index[this.getIdentity(data[i])] = i;
 			}
 
-			this._emit(eventType, event);
+			this.emit(event);
 
 			return object;
 		},
@@ -157,7 +161,11 @@ define([
 				var removed = data.splice(index[id], 1)[0];
 				// now we have to reindex
 				this._reindex();
-				this._emit('delete', { id: id, target: removed });
+				this.emit({
+					id: id,
+					target: removed,
+					type: 'delete'
+				});
 				return true;
 			}
 		},

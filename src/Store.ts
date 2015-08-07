@@ -1,4 +1,3 @@
-import * as arrayUtil from 'dojo-core/array';
 import * as aspect from 'dojo-core/aspect';
 import Evented from 'dojo-core/Evented';
 import { default as has, add as hasAdd } from 'dojo-core/has';
@@ -43,19 +42,11 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 	 * method calls. Stores may wish to explicitly fire events, to control when
 	 * and which event is fired.
 	 */
-	autoEmitEvents: boolean;
-
-	/**
-	 * Holds handles to the aspects responsible for automatically emitting events
-	 * when add, remove, or put are called.
-	 * TODO - Once all classes are converted to typescript, and overriding value for autoEmitEvents
-	 * can be passed to the constructor, this will no longer be necessary.
-	 */
-	autoEmitHandles: Handle[];
+	autoEmitEvents: boolean = true;
 
 	fetch: (args?: dstore.FetchArgs) => dstore.FetchPromise<T>;
 
-	Filter: typeof Filter;
+	Filter: typeof Filter = Filter;
 
 	/**
 	 * Retrieves an object by its identity
@@ -63,13 +54,13 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 	 * @param id The identity to use to lookup the object
 	 * @returns The object in the store that matches the given id.
 	 */
-	get: (id: string | number) => any;
+	get: (id: dstore.StoreItem) => Promise<T> | void;
 
 	/**
 	 * Indicates the property to use as the identity property. The values of this
 	 * property should be unique.
 	 */
-	idProperty: string;
+	idProperty: string = 'id';
 
 	/**
 	 * This should be a entity (like a class/constructor) with a 'prototype' property that will be
@@ -95,7 +86,7 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 	 * @returns The object that was stored, with any changes that were made by
 	 * the storage system (like generated id)
 	 */
-	put: (object: any, directives?: dstore.PutDirectives) => any;
+	put: (object: any, directives?: dstore.PutDirectives) => Promise<any>;
 
 	/**
 	 * Indicates if client-side query engine filtering should (if the store property is true)
@@ -115,7 +106,7 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 	/**
 	 * The query operations represented by this collection
 	 */
-	queryLog: dstore.QueryLogEntry<any> [];
+	queryLog: dstore.QueryLogEntry<any>[] = [];
 
 	storage: Evented;
 
@@ -127,12 +118,7 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 
 	constructor(options?: StoreArgs) {
 		super();
-		this.autoEmitEvents = true;
-		this.autoEmitHandles = [];
-		this.idProperty = 'id';
-		this.queryLog = [];
-		this.Filter = Filter;
-		// Set defaults
+
 		// perform the mixin
 		options && lang.mixin(this, options);
 		// TODO - Don't do this, it's a workaround to make inheritance from this class via
@@ -157,72 +143,61 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 
 		// the object the store can use for holding any local data or events
 		this.storage = new Evented();
+		this._initialize();
+	}
+
+	protected _initialize() {
 		const store = this;
 		if (this.autoEmitEvents) {
 			// emit events when modification operations are called
-			this.autoEmitHandles.push(aspect.after(this, 'add', <any> this._emitUpdateEvent('add')));
-			this.autoEmitHandles.push(aspect.after(this, 'put', <any> this._emitUpdateEvent('update')));
-			this.autoEmitHandles.push(aspect.after(this, 'remove', function (result, args) {
-				const emit = function (result: Promise<any> | any) {
-					store._emit('delete', {
-						id: args[0],
-						type: undefined
+			aspect.after(this, 'add', <any> this._emitUpdateEvent('add'));
+			aspect.after(this, 'put', <any> this._emitUpdateEvent('update'));
+			aspect.after(this, 'remove', function (result, args) {
+				const emit = function (result: Promise<any>) {
+					store.emit({
+						type: 'delete',
+						id: args[0]
 					});
-
-					return result;
 				};
 
-				if (result && result.then) {
+				if (result) {
 					result.then(emit);
-					return result;
+				} else {
+					emit(result);
 				}
 
-				return emit(result);
-			}));
-		}
-	}
-
-	private _emit(type: string, event: {type: string, cancelable?: boolean}): void | boolean {
-		event = event || {
-			type: undefined
-		};
-		event.type = type;
-		try {
-			return this.storage.emit(event);
-		} finally {
-			// Return the initial value of event.cancelable because a listener error makes it impossible
-			// to know whether the event was actually canceled
-			return event['cancelable'];
+				return result;
+			});
 		}
 	}
 
 	protected _emitUpdateEvent(type: string) {
-		return function (result: Promise<any> | any, args: {beforeId: string | number}[]) {
-			const self = this;
-			const emit = function (result: Promise<any> | any) {
+		return function (result: Promise<any>, args: { beforeId: string | number }[]) {
+			const emit = (result: Promise<any>) => {
 				const event: Hash<any> = {
-					target: result
+					target: result,
+					type: type
 				};
-				const options = args[ 1 ] || <any> {};
+				const options = args[1] || <any> {};
 				if ('beforeId' in options) {
 					event['beforeId'] = options.beforeId;
 				}
-				self._emit(type, event);
-				return result;
+				this.emit(event);
 			};
 
-			if (result && result.then) {
+			if (result) {
 				result.then(emit);
-				return result;
 			}
 			else {
-				return emit(result);
+				emit(result);
 			}
+
+			return result;
 		};
 	}
 
 	protected _createSubCollection(kwArgs: {}) {
-		let newCollection = <Hash<any>> (<any> Object).setPrototypeOf({}, this.constructor);
+		let newCollection = <Hash<any>> Object.create(this.constructor.prototype);
 
 		for (let i in this) {
 			if (this._includePropertyInSubCollection(i, newCollection)) {
@@ -279,7 +254,7 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 				object['__proto__'] = prototype;
 			} else {
 				// create a new object with the correct prototype
-				object = <Hash<any>> lang.create(prototype, object, Model);
+				object = <Hash<any>> lang.create(prototype, object);
 			}
 		}
 		return object;
@@ -293,7 +268,7 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 	 * @param object The target object
 	 * @param identityArg The argument used to set the identity
 	 */
-	protected _setIdentity(object: { [index: string]: any; set: any}, identityArg: any) {
+	protected _setIdentity(object: { [index: string]: any; set: (...args: any[]) => any}, identityArg: string | number) {
 		if (object.set) {
 			object.set(this.idProperty, identityArg);
 		} else {
@@ -365,14 +340,11 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 	 * @returns A string or number representing the identity of the object
 	 */
 	getIdentity(object: { [ name: string ]: any, get?: (name: string) => any }) {
-		return object.get ? object.get(this.idProperty) : object[ this.idProperty ];
+		return object.get ? object.get(this.idProperty) : object[this.idProperty];
 	}
 
 	emit(event: EventObject) {
-		return this._emit(event.type, {
-			type: event.type,
-			cancelable: undefined
-		});
+		return this.storage.emit(event);
 	}
 
 	on(type: string, listener: (event: { type: string, beforeId: string | number }) => void) {

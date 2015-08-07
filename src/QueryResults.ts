@@ -1,33 +1,28 @@
 import Promise, { Thenable, Executor } from 'dojo-core/Promise';
 import Task from 'dojo-core/async/Task';
-import {duplicate, mixin} from 'dojo-core/lang';
+import { duplicate, mixin } from 'dojo-core/lang';
 import * as dstore from './interfaces';
 
 export interface QueryOptions {
-	totalLength?: number| Promise<number>;
-	response: any;
+	totalLength?: number | Promise<number>;
+	response?: any;
 	length?: number;
 	forEach?: <T>(callback: (value: T, index: number, source: T[]) => any, instance: any) => Promise<void>;
 }
 
+export interface TotalLengthArray<T> extends Array<T> {
+	totalLength?: number | Promise<number>;
+}
 function forEach<T>(callback: (value: T, index?: number, array?: T[]) => void, thisObject?: any): Promise<void> {
-	const execute: Executor<T[]> = function (resolve, reject) {
-		if (this.then) {
-			this.then(resolve, reject);
-		}
-		else {
-			resolve(this);
-		}
-	};
-	return  new Promise<Array<T>>(execute.bind(this)).then(function (data) {
+	return Promise.resolve(this).then(function (data) {
 		for (let i = 0, l = data.length; i < l; i++) {
 			callback.call(thisObject, data[i], i, data);
 		}
 	});
 }
 
-export default function QueryResults<T>(data: dstore.FetchPromise<T>| Task<T> | T[], options: QueryOptions):
-	dstore.FetchPromise<T> | T[] {
+export default function QueryResults<T>(data: dstore.FetchPromise<T>| TotalLengthArray<T>, options?: QueryOptions):
+	dstore.FetchPromise<T> | TotalLengthArray<T> {
 	const hasTotalLength = options && 'totalLength' in options;
 	let resultsData: dstore.FetchPromise<T>;
 	/* TODO - Remove (<any> data.then and cast, only needed because we're interacting with Dojo 1 Promises */
@@ -37,12 +32,12 @@ export default function QueryResults<T>(data: dstore.FetchPromise<T>| Task<T> | 
 		});
 		// A promise for the eventual realization of the totalLength, in
 		// case it comes from the resolved data
-		const totalLengthPromise = resultsData.then(function (data: T[]) {
+		const totalLengthPromise = resultsData.then(function (data: TotalLengthArray<T>) {
 			// calculate total length, now that we have access to the resolved data
 			let totalLength = hasTotalLength ? options.totalLength :
-				(<any> data).totalLength || data.length;
+				data.totalLength || data.length;
 			// make it available on the resolved data
-			(<any> data).totalLength = totalLength;
+			data.totalLength = totalLength;
 			// don't return the totalLength promise unless we need to, to avoid
 			// triggering a lazy promise
 			return !hasTotalLength && totalLength;
@@ -56,7 +51,7 @@ export default function QueryResults<T>(data: dstore.FetchPromise<T>| Task<T> | 
 		return resultsData;
 	}
 	else if (Array.isArray(data)) {
-		(<any> data).totalLength = hasTotalLength ? options.totalLength : (<T[]> data).length;
-		return <T[]> data;
+		data.totalLength = hasTotalLength ? options.totalLength : (<TotalLengthArray<T>> data).length;
+		return data;
 	}
 }

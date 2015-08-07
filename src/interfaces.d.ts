@@ -3,13 +3,12 @@ import Promise from 'dojo-core/Promise';
 
 // TODO: tailor these as necessary (many were adapted from dstore.d.ts in 1.x)
 
-export interface ChangeEvent<T> {
+export interface ChangeEvent<T> extends EventObject {
 	id: any;
 	index?: number;
 	previousIndex?: number;
 	target: T;
 	totalLength: number;
-	type: string;
 }
 
 export interface Collection<T> {
@@ -24,7 +23,7 @@ export interface Collection<T> {
 	fetchRange(kwArgs: FetchRangeArgs): FetchPromise<T>;
 	filter(query: string | {} | { (item: T, index: number): boolean; }): Collection<T>;
 	forEach(callback: (item: T, index: number) => void, thisObject?: any): Promise<T[]>;
-	get(id: any): Promise<T>;
+	get(id: any): Promise<T> | void;
 	getIdentity(object: { [ name: string ]: any, get?: (name: string) => any }): any;
 	on(type: string, listener: (event: { type: string, beforeId: string | number }) => void): Handle;
 	put(object: T, options?: {}): Promise<T>;
@@ -50,7 +49,7 @@ export interface FetchResponse<T> {
 }
 
 export interface FetchArgs {
-	queryParams?: string| string[];
+	queryParams?: string | string[];
 	headers?: {};
 }
 
@@ -84,8 +83,12 @@ export interface QueryLogEntry<T> {
 }
 
 export interface PutDirectives {
-	id?: String | Number;
+	id?: string | number;
 	before?: {};
 	parent?: {};
 	overwrite?: Boolean;
+}
+
+export interface StoreItem {
+	id: string | number;
 }
