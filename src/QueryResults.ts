@@ -7,7 +7,7 @@ export interface QueryOptions {
 	totalLength?: number| Promise<number>;
 	response: any;
 	length?: number;
-	forEach?: <T>(callback:(value: T, index: number, source: T[]) => any, instance: any) => Promise<void>;
+	forEach?: <T>(callback: (value: T, index: number, source: T[]) => any, instance: any) => Promise<void>;
 }
 
 function forEach<T>(callback: (value: T, index?: number, array?: T[]) => void, thisObject?: any): Promise<void> {
@@ -35,7 +35,7 @@ export default function QueryResults<T>(data: dstore.FetchPromise<T>| Task<T> | 
 		resultsData = new Promise(function (resolve, reject) {
 			return (<dstore.FetchPromise<T>> data).then(resolve, reject);
 		});
-		// a promise for the eventual realization of the totalLength, in
+		// A promise for the eventual realization of the totalLength, in
 		// case it comes from the resolved data
 		const totalLengthPromise = resultsData.then(function (data: T[]) {
 			// calculate total length, now that we have access to the resolved data

@@ -9,13 +9,9 @@ import Filter from './Filter';
 import * as dstore from './interfaces';
 import QueryMethod, { QueryMethodArgs } from './QueryMethod';
 
-// module:
-//		dstore/Store
-/* jshint proto: true */
-// detect __proto__, and avoid using it on Firefox, as they warn about
+// Detect __proto__, and avoid using it on Firefox, as they warn about
 // deoptimizations. The watch method is a clear indicator of the Firefox
 // JS engine.
-
 hasAdd('object-proto', Boolean((<any> {})['__proto__']) && !(<any> {}).watch);
 const hasProto = has('object-proto');
 
@@ -31,94 +27,102 @@ export interface StoreArgs {
 
 export default class Store<T> extends Evented implements dstore.Collection<T>, Hash<any> {
 	[ index: string ]: any;
-	// summary:
-	//		Creates an object, throws an error if the object already exists
-	// object: Object
-	//		The object to store.
-	// directives: dstore/Store.PutDirectives?
-	//		Additional directives for creating objects.
-	// returns: Object
-	//		The object that was stored, with any changes that were made by
-	//		the storage system (like generated id)
+	/**
+	 * Creates an object, throws an error if the object already exists
+	 *
+	 * @param object The object to store.
+	 * @param directives Additional directives for creating objects.
+	 *
+	 * @return The object that was stored, with any changes that were made by
+	 * the storage system (like generated id)
+	 */
 	add: (object: any, directives?: dstore.PutDirectives) => any;
 
-	// autoEmitEvents: Boolean
-	//		Indicates if the events should automatically be fired for put, add, remove
-	//		method calls. Stores may wish to explicitly fire events, to control when
-	//		and which event is fired.
+	/**
+	 * Indicates if the events should automatically be fired for put, add, remove
+	 * method calls. Stores may wish to explicitly fire events, to control when
+	 * and which event is fired.
+	 */
 	autoEmitEvents: boolean;
 
-	// autoEmitHandles: Handle[]
-	//		Holdes handles to the aspects responsible for automatically emitting events
-	//		when add, remove, or put are called.
-	// TODO - Once all classes are converted to typescript, and overriding value for autoEmitEvents
-	// can be passed to the constructor, and this will no longer be necessary.
+	/**
+	 * Holds handles to the aspects responsible for automatically emitting events
+	 * when add, remove, or put are called.
+	 * TODO - Once all classes are converted to typescript, and overriding value for autoEmitEvents
+	 * can be passed to the constructor, this will no longer be necessary.
+	 */
 	autoEmitHandles: Handle[];
 
 	fetch: (args?: dstore.FetchArgs) => dstore.FetchPromise<T>;
 
 	Filter: typeof Filter;
 
-	// summary:
-	//		Retrieves an object by its identity
-	// id: Number
-	//		The identity to use to lookup the object
-	// returns: Object
-	//		The object in the store that matches the given id.
+	/**
+	 * Retrieves an object by its identity
+	 *
+	 * @param id The identity to use to lookup the object
+	 * @returns The object in the store that matches the given id.
+	 */
 	get: (id: string | number) => any;
 
-	// idProperty: String
-	//		Indicates the property to use as the identity property. The values of this
-	//		property should be unique.
+	/**
+	 * Indicates the property to use as the identity property. The values of this
+	 * property should be unique.
+	 */
 	idProperty: string;
 
-	// Model: Function
-	//		This should be a entity (like a class/constructor) with a 'prototype' property that will be
-	//		used as the prototype for all objects returned from this store. One can set
-	//		this to the Model from dmodel/Model to return Model objects, or leave this
-	//		to null if you don't want any methods to decorate the returned
-	//		objects (this can improve performance by avoiding prototype setting),
+	/**
+	 * This should be a entity (like a class/constructor) with a 'prototype' property that will be
+	 * used as the prototype for all objects returned from this store. One can set
+	 * this to the Model from dmodel/Model to return Model objects, or leave this
+	 * to null if you don't want any methods to decorate the returned
+	 * objects (this can improve performance by avoiding prototype setting),
+	 */
 	Model: NewableStoreModel;
 
-	// parse: Function
-	//		One can provide a parsing function that will permit the parsing of the data. By
-	//		default we assume the provide data is a simple JavaScript array that requires
-	//		no parsing (subclass stores may provide their own default parse function)
+	/**
+	 * One can provide a parsing function that will permit the parsing of the data. By
+	 * default we assume the provide data is a simple JavaScript array that requires
+	 * no parsing (subclass stores may provide their own default parse function)
+	 */
 	parse: (...args: any[]) => any;
 
-	// summary:
-	//		Stores an object
-	// object: Object
-	//		The object to store.
-	// directives: dstore/Store.PutDirectives?
-	//		Additional directives for storing objects.
-	// returns: Object
-	//		The object that was stored, with any changes that were made by
-	//		the storage system (like generated id)
+	/**
+	 * Stores an object
+	 *
+	 * @param object The object to store.
+	 * @param directives Additional directives for storing objects.
+	 * @returns The object that was stored, with any changes that were made by
+	 * the storage system (like generated id)
+	 */
 	put: (object: any, directives?: dstore.PutDirectives) => any;
 
-	// queryAccessors: Boolean
-	//		Indicates if client-side query engine filtering should (if the store property is true)
-	//		access object properties through the get() function (enabling querying by
-	//		computed properties), or if it should (by setting this to false) use direct/raw
-	// 		property access (which may more closely follow database querying style).
+	/**
+	 * Indicates if client-side query engine filtering should (if the store property is true)
+	 * access object properties through the get() function (enabling querying by
+	 * computed properties), or if it should (by setting this to false) use direct/raw
+	 * property access (which may more closely follow database querying style).
+	 */
 	queryAccessors: boolean =  true;
 
-	// summary:
-	//		Deletes an object by its identity
-	// id: Number
-	//		The identity to use to delete the object
+	/**
+	 * Deletes an object by its identity
+	 *
+	 * @param id The identity to use to delete the object
+	 */
 	remove: (id: any) => Promise<Object>;
 
-	// queryLog: __QueryLogEntry[]
-	//		The query operations represented by this collection
+	/**
+	 * The query operations represented by this collection
+	 */
 	queryLog: dstore.QueryLogEntry<any> [];
 
 	storage: Evented;
 
-	// stringify: Function
-	//		For stores that serialize data (to send to a server, for example) the stringify
-	//		function can be specified to control how objects are serialized to strings
+	/**
+	 * For stores that serialize data (to send to a server, for example) the stringify
+	 * function can be specified to control how objects are serialized to strings
+	 */
 	stringify: () => any;
 
 	constructor(options?: StoreArgs) {
@@ -238,31 +242,30 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 		return !(name in subCollection) || subCollection[name] !== this[name];
 	}
 
+	/**
+	 * Restores a plain raw object, making an instance of the store's model.
+	 * This is called when an object had been persisted into the underlying
+	 * medium, and is now being restored. Typically restored objects will come
+	 * through a phase of deserialization (through JSON.parse, DB retrieval, etc.)
+	 * in which their __proto__ will be set to Object.prototype. To provide
+	 * data model support, the returned object needs to be an instance of the model.
+	 * This can be accomplished by setting __proto__ to the model's prototype
+	 * or by creating a new instance of the model, and copying the properties to it.
+	 * Also, model's can provide their own restore method that will allow for
+	 * custom model-defined behavior. However, one should be aware that copying
+	 * 	properties is a slower operation than prototype assignment.
+	 * The restore process is designed to be distinct from the create process
+	 * so their is a clear delineation between new objects and restored objects.
+	 *
+	 * @param object The raw object with the properties that need to be defined on the new
+	 * model instance
+	 * @param mutateAllowed This indicates if restore is allowed to mutate the original object
+	 * (by setting its __proto__). If this isn't true, than the restore should
+	 * copy the object to a new object with the correct type.
+	 * @returns An instance of the store model, with all the properties that were defined
+	 * on object. This may or may not be the same object that was passed in.
+	 */
 	protected _restore(object: Hash<any>, mutateAllowed: boolean) {
-		// summary:
-		//		Restores a plain raw object, making an instance of the store's model.
-		//		This is called when an object had been persisted into the underlying
-		//		medium, and is now being restored. Typically restored objects will come
-		//		through a phase of deserialization (through JSON.parse, DB retrieval, etc.)
-		//		in which their __proto__ will be set to Object.prototype. To provide
-		//		data model support, the returned object needs to be an instance of the model.
-		//		This can be accomplished by setting __proto__ to the model's prototype
-		//		or by creating a new instance of the model, and copying the properties to it.
-		//		Also, model's can provide their own restore method that will allow for
-		//		custom model-defined behavior. However, one should be aware that copying
-		//		properties is a slower operation than prototype assignment.
-		//		The restore process is designed to be distinct from the create process
-		//		so their is a clear delineation between new objects and restored objects.
-		// object: Object
-		//		The raw object with the properties that need to be defined on the new
-		//		model instance
-		// mutateAllowed: boolean
-		//		This indicates if restore is allowed to mutate the original object
-		//		(by setting its __proto__). If this isn't true, than the restore should
-		//		copy the object to a new object with the correct type.
-		// returns: Object
-		//		An instance of the store model, with all the properties that were defined
-		//		on object. This may or may not be the same object that was passed in.
 		const Model = this.Model;
 		if (Model && object) {
 			const prototype = Model.prototype;
@@ -282,16 +285,15 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 		return object;
 	}
 
-	protected _setIdentity(object:{ [index: string]: any; set: any}, identityArg: any) {
-		// summary:
-		//		Sets an object's identity
-		// description:
-		//		This method sets an object's identity and is useful to override to support
-		//		multi-key identities and object's whose properties are not stored directly on the object.
-		// object: Object
-		//		The target object
-		// identityArg:
-		//		The argument used to set the identity
+	/**
+	 * Sets an object's identity description:
+	 * This method sets an object's identity and is useful to override to support
+	 * multi-key identities and object's whose properties are not stored directly on the object.
+	 *
+	 * @param object The target object
+	 * @param identityArg The argument used to set the identity
+	 */
+	protected _setIdentity(object: { [index: string]: any; set: any}, identityArg: any) {
 		if (object.set) {
 			object.set(this.idProperty, identityArg);
 		} else {
@@ -299,19 +301,26 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 		}
 	}
 
+	/**
+	 * This creates a new instance from the store's model.
+	 * @param properties The properties that are passed to the model constructor to
+	 * be copied onto the new instance. Note, that should only be called
+	 * when new objects are being created, not when existing objects
+	 * are being restored from storage.
+	 */
 	create(properties: {}) {
-		// summary:
-		//		This creates a new instance from the store's model.
-		//	properties:
-		//		The properties that are passed to the model constructor to
-		//		be copied onto the new instance. Note, that should only be called
-		//		when new objects are being created, not when existing objects
-		//		are being restored from storage.
-		return  new this.Model(properties);
+		return new this.Model(properties);
 	}
 
-	fetchRange(args: dstore.FetchRangeArgs): dstore.FetchPromise<T> {
-		throw new Error("This method is abstract;")
+	/**
+	 * Retrieves a range of objects from the collection, returning a promise to an array.
+	 *
+	 * @param args Contains the starting index of objects to return (0-indexed)
+	 * and the exclusive end of objects to return
+	 * @return A FetchPromise that will resolve with the results of the fetch
+	 */
+	fetchRange(args: dstore.FetchRangeArgs):dstore.FetchPromise<T> {
+		throw new Error("This method is abstract");
 	}
 
 	filter<T>(...args: any[]): dstore.Collection<T> {
@@ -327,18 +336,17 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 		}).apply(this, args);
 	}
 
+	/**
+	 * Iterates over the query results, based on
+	 * https://developer.mozilla.org/en/Core_JavaScript_1.5_Reference/Objects/Array/forEach.
+	 * Note that this executes asynchronously, and returns a promise to indicate when the
+	 * callback has been executed.
+	 *
+	 * @param callback Function that is called for each object in the query results
+	 * @parma thisObject The object to use as |this| in the callback.
+	 * @returns A Promise indicating when the operatio is done
+	 */
 	forEach<T>(callback: (item: T, index: number | string, collection: T[]) => void, thisObject?: any) {
-		// summary:
-		//		Iterates over the query results, based on
-		//		https://developer.mozilla.org/en/Core_JavaScript_1.5_Reference/Objects/Array/forEach.
-		//		Note that this executes asynchronously, and returns a promise to indicate when the
-		//		callback has been executed.
-		// callback:
-		//		Function that is called for each object in the query results
-		// thisObject:
-		//		The object to use as |this| in the callback.
-		// returns:
-		//		Promise
 		return this.fetch().then((data) => {
 			if (data) {
 				let i: number;
@@ -351,12 +359,12 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 		});
 	}
 
+	/**
+	 * Returns an object's identity
+	 * @param object The object to get the identity from
+	 * @returns A string or number representing the identity of the object
+	 */
 	getIdentity(object: { [ name: string ]: any, get?: (name: string) => any }) {
-		// summary:
-		//		Returns an object's identity
-		// object: Object
-		//		The object to get the identity from
-		// returns: String|Number
 		return object.get ? object.get(this.idProperty) : object[ this.idProperty ];
 	}
 
@@ -409,173 +417,4 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 			}
 		}).apply(this, args);
 	}
-/*====,
- transaction: function () {
- // summary:
- //		Starts a new transaction.
- //		Note that a store user might not call transaction() prior to using put,
- //		delete, etc. in which case these operations effectively could be thought of
- //		as "auto-commit" style actions.
- // returns: dstore/Store.Transaction
- //		This represents the new current transaction.
- },
- getChildren: function (parent) {
- // summary:
- //		Retrieves the children of an object.
- // parent: Object
- //		The object to find the children of.
- // returns: dstore/Store.Collection
- //		A result set of the children of the parent object.
- }
- ====*/
 }
-/*====
-	var Collection = declare(null, {
-		// summary:
-		//		This is an abstract API for a collection of objects, which can be filtered,
-		//		sorted, and sliced to create new collections. This is considered to be base
-		//		interface for all stores and  query results in dstore. Note that the objects in the
-		//		collection may not be immediately retrieved from the underlying data
-		//		storage until they are actually accessed through forEach() or fetch().
-
-		filter: function (query) {
-			// summary:
-			//		Filters the collection, returning a new subset collection
-			// query: String|Object|Function
-			//		The query to use for retrieving objects from the store.
-			// returns: Collection
-		},
-		sort: function (property, descending) {
-			// summary:
-			//		Sorts the current collection into a new collection, reordering the objects by the provided sort order.
-			// property: String|Function
-			//		The property to sort on. Alternately a function can be provided to sort with
-			// descending?: Boolean
-			//		Indicate if the sort order should be descending (defaults to ascending)
-			// returns: Collection
-		},
-		fetchRange: function (kwArgs) {
-			// summary:
-			//		Retrieves a range of objects from the collection, returning a promise to an array.
-			// kwArgs.start: Number
-			//		The starting index of objects to return (0-indexed)
-			// kwArgs.end: Number
-			//		The exclusive end of objects to return
-			// returns: Collection
-		},
-		forEach: function (callback, thisObject) {
-			// summary:
-			//		Iterates over the query results, based on
-			//		https://developer.mozilla.org/en/Core_JavaScript_1.5_Reference/Objects/Array/forEach.
-			//		Note that this executes asynchronously, and returns a promise to indicate when the
-			//		callback has been executed.
-			// callback:
-			//		Function that is called for each object in the query results
-			// thisObject:
-			//		The object to use as |this| in the callback.
-			// returns:
-			//		Promise
-		},
-		fetch: function () {
-			// summary:
-			//		This can be called to materialize and request the data behind this collection.
-			//		Often collections may be lazy, and won't retrieve their underlying data until
-			//		forEach or fetch is called. This returns an array, or for asynchronous stores,
-			//		this will return a promise, resolving to an array of objects, once the
-			//		operation is complete.
-			//	returns Array|Promise
-		},
-		on: function (type, listener) {
-			// summary:
-			//		This registers a callback for notification of when data is modified in the query results.
-			// type: String
-			//		There are four types of events defined in this API:
-			//		- add - A new object was added
-			//		- update - An object was updated
-			//		- delete - An object was deleted
-			// listener: Function
-			//		The listener function is called when objects in the query results are modified
-			//		to affect the query result. The listener function is called with a single event object argument:
-			//		| listener(event);
-			//
-			//		- The event object as the following properties:
-			//		- type - The event type (of the four above)
-			//		- target - This indicates the object that was create or modified.
-			//		- id - If an object was removed, this indicates the object that was removed.
-			//		The next two properties will only be available if array tracking is employed,
-			//		which is usually provided by dstore/Trackable
-			//		- previousIndex - The previousIndex parameter indicates the index in the result array where
-			//		the object used to be. If the value is -1, then the object is an addition to
-			//		this result set (due to a new object being created, or changed such that it
-			//		is a part of the result set).
-			//		- index - The inex parameter indicates the index in the result array where
-			//		the object should be now. If the value is -1, then the object is a removal
-			//		from this result set (due to an object being deleted, or changed such that it
-			//		is not a part of the result set).
-
-		}
-	});
-
-	Collection.SortInformation = declare(null, {
-		// summary:
-		//		An object describing what property to sort on, and the direction of the sort.
-		// property: String
-		//		The name of the property to sort on.
-		// descending: Boolean
-		//		The direction of the sort.  Default is false.
-	});
-	Store.Collection = Collection;
-
-	Store.PutDirectives = declare(null, {
-		// summary:
-		//		Directives passed to put() and add() handlers for guiding the update and
-		//		creation of stored objects.
-		// id: String|Number?
-		//		Indicates the identity of the object if a new object is created
-		// beforeId: String?
-		//		If the collection of objects in the store has a natural ordering,
-		//		this indicates that the created or updated object should be placed before the
-		//		object whose identity is specified as the value of this property. A value of null indicates that the
-		//		object should be last.
-		// parent: Object?,
-		//		If the store is hierarchical (with single parenting) this property indicates the
-		//		new parent of the created or updated object.
-		// overwrite: Boolean?
-		//		If this is provided as a boolean it indicates that the object should or should not
-		//		overwrite an existing object. A value of true indicates that a new object
-		//		should not be created, the operation should update an existing object. A
-		//		value of false indicates that an existing object should not be updated, a new
-		//		object should be created (which is the same as an add() operation). When
-		//		this property is not provided, either an update or creation is acceptable.
-	});
-
-	Store.Transaction = declare(null, {
-		// summary:
-		//		This is an object returned from transaction() calls that represents the current
-		//		transaction.
-
-		commit: function () {
-			// summary:
-			//		Commits the transaction. This may throw an error if it fails. Of if the operation
-			//		is asynchronous, it may return a promise that represents the eventual success
-			//		or failure of the commit.
-		},
-		abort: function (callback, thisObject) {
-			// summary:
-			//		Aborts the transaction. This may throw an error if it fails. Of if the operation
-			//		is asynchronous, it may return a promise that represents the eventual success
-			//		or failure of the abort.
-		}
-	});
-
-	var __QueryLogEntry = {
-		type: String
-			The query type
-		arguments: Array
-			The original query arguments
-		normalizedArguments: Array
-			The normalized query arguments
-		querier: Function?
-			A client-side implementation of the query that takes an item array and returns an item array
-	};
-====*/

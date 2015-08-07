@@ -7,7 +7,6 @@ import registerSuite = require('intern!object');
 import assert = require('intern/chai!assert');
 import * as dstore from 'src/interfaces';
 import Request, { RequestStoreArgs } from 'src/Request';
-import Store from 'src/Store';
 import * as mockRequestProvider from './mockRequestProvider';
 
 class Model {
@@ -50,13 +49,6 @@ const requestHeaders: { [ name: string ]: string } = {
 	'test-override': 'overridden'
 };
 
-function runHeaderTest(method: string, args: any[]) {
-	return store[method].apply(store, args).then(function () {
-		mockRequestProvider.assertRequestHeaders(requestHeaders);
-		mockRequestProvider.assertRequestHeaders(globalHeaders);
-	});
-}
-
 function runCollectionTest<T>(collection: dstore.Collection<T>, rangeArgs: dstore.FetchRangeArgs | RequestOptions, expected?: RequestOptions) {
 	const expectedResults: { [ name: string ]: number | string }[] = [
 		{ id: 1, name: 'one' },
@@ -97,7 +89,6 @@ function runCollectionTest<T>(collection: dstore.Collection<T>, rangeArgs: dstor
 	});
 }
 
-
 let registryHandle: Handle;
 let treeTestRootData: string;
 function createRequestTests(Store: new (options?: RequestStoreArgs) => Request<any>) {
@@ -131,7 +122,7 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => Request<a
 		'filter': function () {
 			mockRequestProvider.setResponseText(treeTestRootData);
 
-			return store.filter<{ name: string, describe: () => string, someProperty: string }>('data/treeTestRoot').fetch().then(function (results) {
+			return store.filter<{ name: string; describe: () => string; someProperty: string }>('data/treeTestRoot').fetch().then(function (results) {
 				const object = results[0];
 				assert.strictEqual(object.name, 'node1');
 				assert.strictEqual(object.describe(), 'name is node1');
@@ -308,71 +299,71 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => Request<a
 
 		// TODO - convert SimpleQuery and uncomment
 		'composition with client-side queriers': function () {
-			//var RestWithQueryEngine = declare([ Store, SimpleQuery ], {
-			//	target: '/mockRequest/'
-			//});
+			// var RestWithQueryEngine = declare([ Store, SimpleQuery ], {
+			//   target: '/mockRequest/'
+			// });
 			//
-			//var store = new RestWithQueryEngine(),
-			//	expectedResults = [
-			//		{ id: 1, name: 'one', odd: true },
-			//		{ id: 2, name: 'two', odd: false },
-			//		{ id: 3, name: 'three', odd: true }
-			//	];
-			//mockRequest.setResponseText(JSON.stringify(expectedResults));
-			//var filter = { odd: true },
-			//	filteredCollection = store.filter(filter),
-			//	sortedCollection,
-			//	getTopQueryLogEntry = function (collection) {
-			//		var queryLog = collection.queryLog;
-			//		return queryLog[queryLog.length - 1];
-			//	},
-			//	querier;
+			// var store = new RestWithQueryEngine(),
+			// expectedResults = [
+			//      { id: 1, name: 'one', odd: true },
+			//      { id: 2, name: 'two', odd: false },
+			//      { id: 3, name: 'three', odd: true }
+			// ];
+			// mockRequest.setResponseText(JSON.stringify(expectedResults));
+			// var filter = { odd: true },
+			// filteredCollection = store.filter(filter),
+			// sortedCollection,
+			// getTopQueryLogEntry = function (collection) {
+			//      var queryLog = collection.queryLog;
+			//      return queryLog[queryLog.length - 1];
+			// },
+			// querier;
 			//
-			//assert.strictEqual(filteredCollection.queryLog.length, 1);
-			//return when(filteredCollection.fetch()).then(function (results) {
-			//	mockRequest.assertQuery(filter);
-			//	assert.strictEqual(results.length, expectedResults.length);
+			// assert.strictEqual(filteredCollection.queryLog.length, 1);
+			// return when(filteredCollection.fetch()).then(function (results) {
+			// mockRequest.assertQuery(filter);
+			// assert.strictEqual(results.length, expectedResults.length);
 			//
-			//	var queryLogEntry = getTopQueryLogEntry(filteredCollection);
-			//	assert.property(queryLogEntry, 'querier');
-			//	querier = queryLogEntry.querier;
+			// var queryLogEntry = getTopQueryLogEntry(filteredCollection);
+			// assert.property(queryLogEntry, 'querier');
+			// querier = queryLogEntry.querier;
 			//
-			//	var filteredResults = querier(expectedResults);
-			//	assert.equal(filteredResults.length, 2);
-			//	assert.deepEqual(filteredResults[0], expectedResults[0]);
-			//	assert.deepEqual(filteredResults[1], expectedResults[2]);
+			// var filteredResults = querier(expectedResults);
+			// assert.equal(filteredResults.length, 2);
+			// assert.deepEqual(filteredResults[0], expectedResults[0]);
+			// assert.deepEqual(filteredResults[1], expectedResults[2]);
 			//
-			//	sortedCollection = filteredCollection.sort('id', true);
-			//	assert.strictEqual(sortedCollection.queryLog.length, 2);
+			// sortedCollection = filteredCollection.sort('id', true);
+			// assert.strictEqual(sortedCollection.queryLog.length, 2);
 			//
-			//	return sortedCollection.fetch();
-			//}).then(function (results) {
-			//	mockRequest.assertQuery({ 'sort(-id)': '' });
-			//	assert.strictEqual(results.length, expectedResults.length);
+			// return sortedCollection.fetch();
+			// }).then(function (results) {
+			// mockRequest.assertQuery({ 'sort(-id)': '' });
+			// assert.strictEqual(results.length, expectedResults.length);
 			//
-			//	var queryLogEntry = getTopQueryLogEntry(sortedCollection);
-			//	assert.property(queryLogEntry, 'querier');
-			//	querier = (function () {
-			//		var existingQueryer = querier,
-			//			newQueryer = queryLogEntry.querier;
-			//		return function (data) {
-			//			return newQueryer(existingQueryer(data));
-			//		};
-			//	})();
+			// var queryLogEntry = getTopQueryLogEntry(sortedCollection);
+			// assert.property(queryLogEntry, 'querier');
+			// querier = (function () {
+			//      var existingQueryer = querier,
+			//      newQueryer = queryLogEntry.querier;
+			//      return function (data) {
+			//        return newQueryer(existingQueryer(data));
+			//      };
+			// })();
 			//
-			//	var sortedFilteredResults = querier(expectedResults);
-			//	assert.equal(sortedFilteredResults.length, 2);
-			//	assert.deepEqual(sortedFilteredResults[0], expectedResults[2]);
-			//	assert.deepEqual(sortedFilteredResults[1], expectedResults[0]);
+			// var sortedFilteredResults = querier(expectedResults);
+			// assert.equal(sortedFilteredResults.length, 2);
+			// assert.deepEqual(sortedFilteredResults[0], expectedResults[2]);
+			// assert.deepEqual(sortedFilteredResults[1], expectedResults[0]);
 			//
-			//	return sortedCollection.fetchRange({start: 0, end: 25});
-			//}).then(function (results) {
-			//	mockRequest.assertQuery({
-			//		'sort(-id)': '',
-			//		'limit(25)': ''
-			//	});
-			//	assert.strictEqual(results.length, expectedResults.length);
-			//});
+			// return sortedCollection.fetchRange({start: 0, end: 25});
+			// }).then(function (results) {
+			// mockRequest.assertQuery({
+			//      'sort(-id)': '',
+			//      'limit(25)': ''
+			// });
+			// assert.strictEqual(results.length, expectedResults.length);
+			// });
 		}
 	};
 }

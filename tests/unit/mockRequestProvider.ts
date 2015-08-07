@@ -1,7 +1,6 @@
 import Task from 'dojo-core/async/Task';
 import { Hash } from 'dojo-core/interfaces';
 import * as lang from 'dojo-core/lang';
-import Promise from 'dojo-core/Promise';
 import { ResponsePromise, Response, RequestOptions } from 'dojo-core/request'
 import UrlSearchParams, { ParamList } from 'dojo-core/UrlSearchParams';
 import assert = require('intern/chai!assert');
