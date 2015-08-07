@@ -268,11 +268,11 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 	 * @param object The target object
 	 * @param identityArg The argument used to set the identity
 	 */
-	protected _setIdentity(object: { [index: string]: any; set: (...args: any[]) => any}, identityArg: string | number) {
+	protected _setIdentity(object: { [ index: string ]: any; set: (...args: any[]) => any}, identityArg: string | number) {
 		if (object.set) {
 			object.set(this.idProperty, identityArg);
 		} else {
-			object[ this.idProperty ] = identityArg;
+			object[this.idProperty] = identityArg;
 		}
 	}
 
