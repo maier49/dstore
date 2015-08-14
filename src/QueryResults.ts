@@ -21,7 +21,7 @@ function forEach<T>(callback: (value: T, index?: number, array?: T[]) => void, t
 	});
 }
 
-export default function QueryResults<T>(data: dstore.FetchPromise<T>| TotalLengthArray<T>, options?: QueryOptions):
+export default function QueryResults<T>(data: dstore.FetchPromise<T> | TotalLengthArray<T>, options?: QueryOptions):
 	dstore.FetchPromise<T> | TotalLengthArray<T> {
 	const hasTotalLength = options && 'totalLength' in options;
 	let resultsData: dstore.FetchPromise<T>;

@@ -1,15 +1,16 @@
 import * as arrayUtil from 'dojo-core/array';
+import { Hash } from 'dojo-core/interfaces';
 import * as lang from 'dojo-core/lang';
 import Promise from 'dojo-core/Promise';
 import request, { Response, ResponsePromise } from 'dojo-core/request';
 import Filter from './Filter';
 import * as dstore from './interfaces';
 import QueryResults from './QueryResults';
-import Store, { NewableStoreModel } from './Store';
+import Store, { NewableStoreModel, StoreArgs } from './Store';
 
 const push = [].push;
 
-export interface RequestStoreArgs {
+export interface RequestStoreArgs extends StoreArgs{
 	target?: string;
 	headers?: {};
 	Model?: NewableStoreModel;
@@ -42,7 +43,7 @@ abstract class Request<T> extends Store<T> implements dstore.Collection<T> {
 	 * Additional headers to pass in all requests to the server. These can be overridden
 	 * by passing additional headers to calls to the store.
 	 */
-	headers: {};
+	headers: Hash<string>;
 
 	/**
 	 * The indicates if range limits (start and end) should be specified
@@ -98,28 +99,15 @@ abstract class Request<T> extends Store<T> implements dstore.Collection<T> {
 	 */
 	constructor(options?: RequestStoreArgs) {
 		super(options);
-
-		 // Defaults to JSON, but other formats can be parsed by providing an alternate
-		 // parsing function. If you do want to use an alternate format, you will probably
-		 // want to use an alternate stringify function for the serialization of data as well.
-		 // Also, if you want to support parsing a larger set of JavaScript objects
-		 // outside of strict JSON parsing, you can provide dojo/_base/json.fromJson as the parse function
-		this.parse = this.parse || function (data: string) {
-			return JSON.parse(data);
-		};
-		this.headers = this.headers || {};
-		this.target = this.target || '';
 		this._targetContainsQueryString = this.target.lastIndexOf('?') >= 0;
-		this.ascendingPrefix = this.ascendingPrefix || '+';
-		this.descendingPrefix = this.descendingPrefix || '-';
-		this.accepts = this.accepts || 'application/json';
 	}
 
-	fetch(kwArgs?: dstore.FetchArgs) {
-		const results = this._request(kwArgs);
-		return <dstore.FetchPromise<any>> QueryResults(results.data, {
-			response: results.response
-		});
+	protected _initialize() {
+		this.headers = {};
+		this.target = '';
+		this.ascendingPrefix = '+';
+		this.descendingPrefix = '-';
+		this.accepts = 'application/json';
 	}
 
 	protected _request(kwArgs: dstore.FetchArgs = {}): {
@@ -128,8 +116,7 @@ abstract class Request<T> extends Store<T> implements dstore.Collection<T> {
 		response: ResponsePromise<T>
 	} {
 		// perform the actual query
-		const RequestHeader: { [ name: string ]: string } = null;
-		const headers = <typeof RequestHeader> lang.mixin(Object.create(this.headers), { Accept: this.accepts });
+		const headers = <Hash<string>> lang.mixin(Object.create(this.headers), { Accept: this.accepts });
 
 		if ('headers' in kwArgs) {
 			lang.mixin(headers, kwArgs.headers);
@@ -141,16 +128,16 @@ abstract class Request<T> extends Store<T> implements dstore.Collection<T> {
 			method: 'GET',
 			headers: headers
 		});
-		const collection = this;
-		const parsedResponse = response.then(function (response: Response<string>) {
-			return collection.parse(response.data);
+
+		const parsedResponse = response.then((response: Response<string>) => {
+			return this.parse(response.data);
 		});
 		return {
-			data: parsedResponse.then(function (data) {
+			data: parsedResponse.then((data) => {
 				// support items in the results
 				const results = data.items || data;
 				for (let i = 0, l = results.length; i < l; i++) {
-					results[ i ] = collection._restore(results[ i ], true);
+					results[i] = this._restore(results[i], true);
 				}
 				return results;
 			}),
@@ -165,13 +152,8 @@ abstract class Request<T> extends Store<T> implements dstore.Collection<T> {
 				// else use headers
 				return response.then(function (response) {
 					const rangeHeader = response.getHeader('Content-Range');
-					let rangeMatch: RegExpMatchArray;
-					let range: number;
-					if (rangeHeader && (rangeMatch = rangeHeader.match(/\/(.*)/)) && (range = Number(rangeMatch[ 1 ]))) {
-						return range;
-					} else {
-						return null;
-					}
+					let rangeMatch = rangeHeader ? rangeHeader.match(/\/(.*)/) : null;
+					return rangeMatch ? Number(rangeMatch[1]) : null;
 				});
 			}),
 			response: response
@@ -327,6 +309,13 @@ abstract class Request<T> extends Store<T> implements dstore.Collection<T> {
 		};
 	}
 
+	fetch(kwArgs?: dstore.FetchArgs) {
+		const results = this._request(kwArgs);
+		return <dstore.FetchPromise<T>> QueryResults(results.data, {
+			response: results.response
+		});
+	}
+
 	fetchRange(kwArgs: dstore.FetchRangeArgs) {
 		const start = kwArgs.start;
 		const end = kwArgs.end;
@@ -347,6 +336,17 @@ abstract class Request<T> extends Store<T> implements dstore.Collection<T> {
 			response: results.response
 		});
 	}
+
+	parse(data: string) {
+		// Defaults to JSON, but other formats can be parsed by providing an alternate
+		// parsing function. If you do want to use an alternate format, you will probably
+		// want to use an alternate stringify function for the serialization of data as well.
+		// Also, if you want to support parsing a larger set of JavaScript objects
+		// outside of strict JSON parsing, you can provide dojo/_base/json.fromJson as the parse function
+		return JSON.parse(data);
+	}
+
+;
 }
 
 export default Request;

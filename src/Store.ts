@@ -52,13 +52,6 @@ abstract class Store<T> extends Evented implements dstore.Collection<T>, Hash<an
 	Model: NewableStoreModel;
 
 	/**
-	 * One can provide a parsing function that will permit the parsing of the data. By
-	 * default we assume the provide data is a simple JavaScript array that requires
-	 * no parsing (subclass stores may provide their own default parse function)
-	 */
-	parse: (...args: any[]) => any;
-
-	/**
 	 * Indicates if client-side query engine filtering should (if the store property is true)
 	 * access object properties through the get() function (enabling querying by
 	 * computed properties), or if it should (by setting this to false) use direct/raw
@@ -318,6 +311,15 @@ abstract class Store<T> extends Evented implements dstore.Collection<T>, Hash<an
 	}
 
 	/**
+	 * One can provide a parsing function that will permit the parsing of the data. By
+	 * default we assume the provide data is a simple JavaScript array that requires
+	 * no parsing (subclass stores may provide their own default parse function)
+	 */
+	parse(args: any): any {
+		return args;
+	}
+
+	/**
 	 * Stores an object
 	 *
 	 * @param object The object to store.
@@ -344,7 +346,7 @@ abstract class Store<T> extends Evented implements dstore.Collection<T>, Hash<an
 		return QueryMethod(<QueryMethodArgs<T>> {
 			type: 'sort',
 			normalizeArguments: function (property, descending) {
-				let sorted: any[];
+				let sorted: any;
 				if (typeof property === 'function') {
 					sorted = [ property ];
 				}
@@ -359,10 +361,10 @@ abstract class Store<T> extends Evented implements dstore.Collection<T>, Hash<an
 						sorted = [ { property: property, descending: descending } ];
 					}
 
-					sorted = sorted.map(function (sort: { descending: boolean }) {
+					sorted = sorted.map(function (sort: dstore.SortOption) {
 						// copy the sort object to avoid mutating the original arguments
-						sort = <{ descending: boolean }> lang.mixin({}, sort);
-						sort.descending = !!sort.descending;
+						sort = <dstore.SortOption> lang.mixin({}, sort);
+						sort.descending = Boolean(sort.descending);
 						return sort;
 					});
 					// wrap in array because sort objects are a single array argument

@@ -36,7 +36,7 @@ export interface Collection<T> {
 
 export interface FetchPromise<T> extends Promise<T[]> {
 	forEach?(callback: (value: T, index?: number, array?: T[]) => void, thisObject?: any): Promise<void>;
-	response?: FetchResponse<T>;
+	response?: FetchResponse<T[]>;
 	totalLength?: number | Promise<number>;
 }
 
