@@ -19,6 +19,37 @@ class NonDeclareBasedModel {
 	static createSubclass: any;
 }
 
+class ConcreteStore<T> extends Store<T> {
+
+	fetchRange(args: dstore.FetchRangeArgs): dstore.FetchPromise<T> {
+		throw new Error('This Method is abstract');
+	}
+
+	add(object: T, directives?: dstore.PutDirectives):  Promise<T> {
+		return new Promise(function (resolve) {
+			resolve(object)
+		});
+	}
+
+	put(object: T, directives?: dstore.PutDirectives):  Promise<T> {
+		return new Promise(function (resolve) {
+			resolve(object)
+		});
+	}
+
+	fetch(args?: dstore.FetchArgs): dstore.FetchPromise<T> {
+		throw new Error('This Method is abstract');
+	}
+
+	get(id: dstore.StoreItem): Promise<T> | void {
+		throw new Error('This Method is abstract');
+	}
+
+	remove(id: any): Promise<T | void> {
+		throw new Error('This Method is abstract');
+	}
+}
+
 class Model {
 	constructor (args?: {}) {
 		lang.mixin(this, {
@@ -46,12 +77,12 @@ class Model {
 	}
 }
 
-let store: Store<any>;
+let store: ConcreteStore<any>;
 registerSuite({
 	name: 'dstore Store',
 
 	beforeEach: function () {
-		store = new Store();
+		store = new ConcreteStore();
 	},
 
 	'getIdentity and _setIdentity': {
@@ -159,7 +190,7 @@ registerSuite({
 	},
 
 	'restore'() {
-		const store = new Store({
+		const store = new ConcreteStore({
 			Model: NonDeclareBasedModel
 		});
 		const restoredObject = (<any> store)._restore({ foo: 'original' });
@@ -173,7 +204,7 @@ registerSuite({
 			events: string[] = [];
 
 		// rely on autoEventEmits
-		const store = new  Store();
+		const store = new  ConcreteStore();
 		function countMethodCall(method: string, object: any) {
 			methodCalls.push(method);
 			return object;
@@ -203,24 +234,26 @@ registerSuite({
 	},
 
 	'events with beforeId'() {
-		const store = new Store(),
+		const store = new ConcreteStore(),
 			beforeIds: Array<string | number> = [];
 
 		store.on('add', function (event) {
 			beforeIds.push(event.beforeId);
 		});
+
 		store.on('update', function (event) {
 			beforeIds.push(event.beforeId);
 		});
 
-		store.add({}, { beforeId: 123 });
-		store.put({}, { beforeId: 321 });
-
-		assert.deepEqual(beforeIds, [ 123, 321 ]);
+		return store.add({}, <any> { beforeId: 123 }).then(function () {
+			return store.put({}, <any> { beforeId: 321 })
+		}).then( function () {
+			assert.deepEqual(beforeIds, [ 123, 321 ]);
+		});
 	},
 
 	'emit should catch errors thrown by listeners'() {
-		const store = new Store(),
+		const store = new ConcreteStore(),
 			testEmit = lang.lateBind(store, 'emit', 'test-event');
 
 		assert.doesNotThrow(testEmit);
@@ -232,7 +265,7 @@ registerSuite({
 	},
 
 	forEach() {
-		const store = new Store<any>();
+		const store = new ConcreteStore<any>();
 		store.fetch = function (args?: dstore.FetchArgs) {
 			return new Promise(function (resolve) {
 				resolve([ 0, 1, 2 ]);
@@ -249,13 +282,13 @@ registerSuite({
 	},
 
 	'extends declare-based Model constructors and adds a _store reference on the prototype'() {
-		const store = new Store({ Model: Model });
+		const store = new ConcreteStore({ Model: Model });
 		assert.notStrictEqual(store.Model, Model);
 		assert.isTrue((<any> store.Model).extended);
 	},
 
 	'does not extend Model constructors not based on declare'() {
-		const store = new Store({Model: NonDeclareBasedModel});
+		const store = new ConcreteStore({Model: NonDeclareBasedModel});
 		assert.strictEqual(store.Model, NonDeclareBasedModel);
 	}
 });

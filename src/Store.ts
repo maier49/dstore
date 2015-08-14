@@ -23,19 +23,8 @@ export interface NewableStoreModel {
 export interface StoreArgs {
 	Model?: NewableStoreModel;
 }
-
-export default class Store<T> extends Evented implements dstore.Collection<T>, Hash<any> {
+abstract class Store<T> extends Evented implements dstore.Collection<T>, Hash<any> {
 	[ index: string ]: any;
-	/**
-	 * Creates an object, throws an error if the object already exists
-	 *
-	 * @param object The object to store.
-	 * @param directives Additional directives for creating objects.
-	 *
-	 * @return The object that was stored, with any changes that were made by
-	 * the storage system (like generated id)
-	 */
-	add: (object: any, directives?: dstore.PutDirectives) => any;
 
 	/**
 	 * Indicates if the events should automatically be fired for put, add, remove
@@ -44,17 +33,8 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 	 */
 	autoEmitEvents: boolean = true;
 
-	fetch: (args?: dstore.FetchArgs) => dstore.FetchPromise<T>;
 
 	Filter: typeof Filter = Filter;
-
-	/**
-	 * Retrieves an object by its identity
-	 *
-	 * @param id The identity to use to lookup the object
-	 * @returns The object in the store that matches the given id.
-	 */
-	get: (id: dstore.StoreItem) => Promise<T> | void;
 
 	/**
 	 * Indicates the property to use as the identity property. The values of this
@@ -79,29 +59,12 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 	parse: (...args: any[]) => any;
 
 	/**
-	 * Stores an object
-	 *
-	 * @param object The object to store.
-	 * @param directives Additional directives for storing objects.
-	 * @returns The object that was stored, with any changes that were made by
-	 * the storage system (like generated id)
-	 */
-	put: (object: any, directives?: dstore.PutDirectives) => Promise<any>;
-
-	/**
 	 * Indicates if client-side query engine filtering should (if the store property is true)
 	 * access object properties through the get() function (enabling querying by
 	 * computed properties), or if it should (by setting this to false) use direct/raw
 	 * property access (which may more closely follow database querying style).
 	 */
-	queryAccessors: boolean =  true;
-
-	/**
-	 * Deletes an object by its identity
-	 *
-	 * @param id The identity to use to delete the object
-	 */
-	remove: (id: any) => Promise<Object>;
+	queryAccessors: boolean = true;
 
 	/**
 	 * The query operations represented by this collection
@@ -118,7 +81,7 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 
 	constructor(options?: StoreArgs) {
 		super();
-
+		this._initialize();
 		// perform the mixin
 		options && lang.mixin(this, options);
 		// TODO - Don't do this, it's a workaround to make inheritance from this class via
@@ -143,32 +106,25 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 
 		// the object the store can use for holding any local data or events
 		this.storage = new Evented();
-		this._initialize();
-	}
-
-	protected _initialize() {
 		const store = this;
 		if (this.autoEmitEvents) {
 			// emit events when modification operations are called
 			aspect.after(this, 'add', <any> this._emitUpdateEvent('add'));
 			aspect.after(this, 'put', <any> this._emitUpdateEvent('update'));
 			aspect.after(this, 'remove', function (result, args) {
-				const emit = function (result: Promise<any>) {
-					store.emit({
+				result.then(function (result: Promise<any>) {
+					store.emit(<any> {
 						type: 'delete',
 						id: args[0]
 					});
-				};
-
-				if (result) {
-					result.then(emit);
-				} else {
-					emit(result);
-				}
+				});
 
 				return result;
 			});
 		}
+	}
+
+	protected _initialize(): void {
 	}
 
 	protected _emitUpdateEvent(type: string) {
@@ -188,9 +144,9 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 			if (result) {
 				result.then(emit);
 			}
-			else {
-				emit(result);
-			}
+			//else {
+			//	emit(result);
+			//}
 
 			return result;
 		};
@@ -237,7 +193,7 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 	 * @param mutateAllowed This indicates if restore is allowed to mutate the original object
 	 * (by setting its __proto__). If this isn't true, than the restore should
 	 * copy the object to a new object with the correct type.
-	 * @returns An instance of the store model, with all the properties that were defined
+	 * @return An instance of the store model, with all the properties that were defined
 	 * on object. This may or may not be the same object that was passed in.
 	 */
 	protected _restore(object: Hash<any>, mutateAllowed: boolean) {
@@ -261,9 +217,8 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 	}
 
 	/**
-	 * Sets an object's identity description:
-	 * This method sets an object's identity and is useful to override to support
-	 * multi-key identities and object's whose properties are not stored directly on the object.
+	 * Sets an object's identity and is useful to override to support
+	 * multi-key identities and objects whose properties are not stored directly on the object.
 	 *
 	 * @param object The target object
 	 * @param identityArg The argument used to set the identity
@@ -287,6 +242,20 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 		return new this.Model(properties);
 	}
 
+
+	/**
+	 * Creates an object, throws an error if the object already exists
+	 *
+	 * @param object The object to store.
+	 * @param directives Additional directives for creating objects.
+	 *
+	 * @return The object that was stored, with any changes that were made by
+	 * the storage system (like generated id)
+	 */
+	abstract add(object: T, directives?: dstore.PutDirectives):  Promise<T>;
+
+	abstract fetch(args?: dstore.FetchArgs): dstore.FetchPromise<T>;
+
 	/**
 	 * Retrieves a range of objects from the collection, returning a promise to an array.
 	 *
@@ -294,9 +263,15 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 	 * and the exclusive end of objects to return
 	 * @return A FetchPromise that will resolve with the results of the fetch
 	 */
-	fetchRange(args: dstore.FetchRangeArgs):dstore.FetchPromise<T> {
-		throw new Error("This method is abstract");
-	}
+	abstract fetchRange(args: dstore.FetchRangeArgs):dstore.FetchPromise<T>;
+
+	/**
+	 * Retrieves an object by its identity
+	 *
+	 * @param id The identity to use to lookup the object
+	 * @return The object in the store that matches the given id.
+	 */
+	abstract get(id: dstore.StoreItem): Promise<T> | void;
 
 	filter<T>(...args: any[]): dstore.Collection<T> {
 		return QueryMethod(<QueryMethodArgs<T>> {
@@ -319,16 +294,14 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 	 *
 	 * @param callback Function that is called for each object in the query results
 	 * @parma thisObject The object to use as |this| in the callback.
-	 * @returns A Promise indicating when the operatio is done
+	 * @return A Promise indicating when the operation is done
 	 */
 	forEach<T>(callback: (item: T, index: number | string, collection: T[]) => void, thisObject?: any) {
 		return this.fetch().then((data) => {
-			if (data) {
-				let i: number;
-				let item: any;
-				for (i = 0; (item = data[i]) !== undefined; i++) {
-					callback.call(thisObject, item, i, this);
-				}
+			let i: number;
+			let item: any;
+			for (i = 0; (item = data[i]) !== undefined; i++) {
+				callback.call(thisObject, item, i, this);
 			}
 			return data;
 		});
@@ -337,7 +310,7 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 	/**
 	 * Returns an object's identity
 	 * @param object The object to get the identity from
-	 * @returns A string or number representing the identity of the object
+	 * @return A string or number representing the identity of the object
 	 */
 	getIdentity(object: { [ name: string ]: any, get?: (name: string) => any }) {
 		return object.get ? object.get(this.idProperty) : object[this.idProperty];
@@ -350,6 +323,23 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 	on(type: string, listener: (event: { type: string, beforeId: string | number }) => void) {
 		return this.storage.on(type, listener);
 	}
+
+	/**
+	 * Stores an object
+	 *
+	 * @param object The object to store.
+	 * @param directives Additional directives for storing objects.
+	 * @return The object that was stored, with any changes that were made by
+	 * the storage system (like generated id)
+	 */
+	abstract put(object: any, directives?: dstore.PutDirectives): Promise<any>;
+
+	/**
+	 * Deletes an object by its identity
+	 *
+	 * @param id The identity to use to delete the object
+	 */
+	abstract remove(id: any): Promise<T | void>;
 
 	select<T>(args: string | string[]) : dstore.Collection<T> {
 		return QueryMethod(<QueryMethodArgs<T>> {
@@ -390,3 +380,5 @@ export default class Store<T> extends Evented implements dstore.Collection<T>, H
 		}).apply(this, args);
 	}
 }
+
+export default Store;

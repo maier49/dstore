@@ -16,7 +16,7 @@ export interface RequestStoreArgs {
 	parse?: () => any;
 }
 
-export default class Request<T> extends Store<T> implements dstore.Collection<T> {
+abstract class Request<T> extends Store<T> implements dstore.Collection<T> {
 
 	/**
 	 * A flag indicating whether the target contains a query string
@@ -98,28 +98,28 @@ export default class Request<T> extends Store<T> implements dstore.Collection<T>
 	 */
 	constructor(options?: RequestStoreArgs) {
 		super(options);
-		/**
-		 * Defaults to JSON, but other formats can be parsed by providing an alternate
-		 * parsing function. If you do want to use an alternate format, you will probably
-		 * want to use an alternate stringify function for the serialization of data as well.
-		 * Also, if you want to support parsing a larger set of JavaScript objects
-		 * outside of strict JSON parsing, you can provide dojo/_base/json.fromJson as the parse function
-		 */
+
+		 // Defaults to JSON, but other formats can be parsed by providing an alternate
+		 // parsing function. If you do want to use an alternate format, you will probably
+		 // want to use an alternate stringify function for the serialization of data as well.
+		 // Also, if you want to support parsing a larger set of JavaScript objects
+		 // outside of strict JSON parsing, you can provide dojo/_base/json.fromJson as the parse function
 		this.parse = this.parse || function (data: string) {
-				return JSON.parse(data);
-			};
+			return JSON.parse(data);
+		};
 		this.headers = this.headers || {};
 		this.target = this.target || '';
 		this._targetContainsQueryString = this.target.lastIndexOf('?') >= 0;
 		this.ascendingPrefix = this.ascendingPrefix || '+';
 		this.descendingPrefix = this.descendingPrefix || '-';
 		this.accepts = this.accepts || 'application/json';
-		this.fetch = this.fetch || function (kwArgs?: dstore.FetchArgs) {
-			const results = this._request(kwArgs);
-			return <dstore.FetchPromise<any>> QueryResults(results.data, {
-				response: results.response
-			});
-		};
+	}
+
+	fetch(kwArgs?: dstore.FetchArgs) {
+		const results = this._request(kwArgs);
+		return <dstore.FetchPromise<any>> QueryResults(results.data, {
+			response: results.response
+		});
 	}
 
 	protected _request(kwArgs: dstore.FetchArgs = {}): {
@@ -182,7 +182,7 @@ export default class Request<T> extends Store<T> implements dstore.Collection<T>
 	 * Constructs filter-related params to be inserted into the query string
 	 *
 	 * @param filter The filter to render as part of a query string
-	 * @returns Filter-related params to be inserted in the query string
+	 * @return Filter-related params to be inserted in the query string
 	 */
 	protected _renderFilterParams(filter: Filter): string[] {
 		const type = filter.type;
@@ -244,7 +244,7 @@ export default class Request<T> extends Store<T> implements dstore.Collection<T>
 	 *
 	 * @param start The beginning of the range
 	 * @param end The end of the range
-	 * Range-related params to be inserted in the query string
+	 * @return Range-related params to be inserted in the query string
 	 */
 	protected _renderRangeParams(start: number, end: number): string[] {
 		const params: string[] = [];
@@ -348,3 +348,5 @@ export default class Request<T> extends Store<T> implements dstore.Collection<T>
 		});
 	}
 }
+
+export default Request;

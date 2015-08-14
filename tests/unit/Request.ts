@@ -36,7 +36,28 @@ class Model {
 	}
 }
 
-let store: Request<any>;
+
+class ConcreteRequest<T> extends Request<T> {
+	add(object: any, directives?: dstore.PutDirectives):  any {
+		throw new Error('This Method is abstract');
+	}
+
+	put(object: T, directives?: dstore.PutDirectives):  Promise<T> {
+		return new Promise(function (resolve) {
+			resolve(object)
+		});
+	}
+
+	get(id: dstore.StoreItem): Promise<T> | void {
+		throw new Error('This Method is abstract');
+	}
+
+	remove(id: any): Promise<T | void> {
+		throw new Error('This Method is abstract');
+	}
+}
+
+let store: ConcreteRequest<any>;
 
 const globalHeaders: { [ name: string ]: string } = {
 
@@ -91,7 +112,7 @@ function runCollectionTest<T>(collection: dstore.Collection<T>, rangeArgs: dstor
 
 let registryHandle: Handle;
 let treeTestRootData: string;
-function createRequestTests(Store: new (options?: RequestStoreArgs) => Request<any>) {
+function createRequestTests(Store: new (options?: RequestStoreArgs) => ConcreteRequest<any>) {
 	return {
 		name: 'dstore Request',
 
@@ -252,7 +273,7 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => Request<a
 			});
 		},
 		'range': function () {
-			return runCollectionTest(store, { start: 15, end: 25 }, {
+			return runCollectionTest(store, { start: 15, end: 25 }, <any> {
 				queryParams: {
 					'limit(10,15)': ''
 				}
@@ -261,7 +282,7 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => Request<a
 		'range with rangeParam': function () {
 			store.rangeStartParam = 'start';
 			store.rangeCountParam = 'count';
-			return runCollectionTest(store, { start: 15, end: 25 }, {
+			return runCollectionTest(store, { start: 15, end: 25 }, <any> {
 				queryParams: {
 					'start': '15',
 					'count': '10'
@@ -289,7 +310,7 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => Request<a
 		'filter+sort+fetchRange': function () {
 			const filter = { prop1: 'Prop1Value', prop2: 'Prop2Value' };
 			const collection = store.filter(filter).sort('prop1');
-			return runCollectionTest(collection, { start: 15, end: 25 }, {
+			return runCollectionTest(collection, { start: 15, end: 25 }, <any> {
 				queryParams: lang.mixin({}, filter, {
 					'limit(10,15)': '',
 					'sort(+prop1)': ''
@@ -367,4 +388,4 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => Request<a
 		}
 	};
 }
-registerSuite(createRequestTests(Request));
+registerSuite(createRequestTests(<any> ConcreteRequest));

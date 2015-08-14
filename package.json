@@ -32,7 +32,7 @@
 		"rql": "~0.3.3",
 		"tslint": "2.1.1",
 		"intern": "2.2.2",
-		"typescript": "Arnavion/typescript-github#2015-05-23-711886e09994eda5bafa9383d92954242fc342c5"
+		"typescript": "1.6.0-dev.20150814"
 	},
 	"directories": {
 		"lib": "."

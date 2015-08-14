@@ -22,12 +22,12 @@ export interface Collection<T> {
 	emit(event: EventObject): boolean | void;
 	fetchRange(kwArgs: FetchRangeArgs): FetchPromise<T>;
 	filter(query: string | {} | { (item: T, index: number): boolean; }): Collection<T>;
-	forEach(callback: (item: T, index: number) => void, thisObject?: any): Promise<T[]>;
+	forEach(callback: (item: T, index: number, collection: T[]) => void, thisObject?: any): Promise<T[]>;
 	get(id: any): Promise<T> | void;
 	getIdentity(object: { [ name: string ]: any, get?: (name: string) => any }): any;
 	on(type: string, listener: (event: { type: string, beforeId: string | number }) => void): Handle;
 	put(object: T, options?: {}): Promise<T>;
-	remove(id: any): Promise<Object>;
+	remove(id: any): Promise<T | void>;
 	sort(property: string | { property: string }[] | { (a: T, b: T): number; }, descending?: boolean): Collection<T>;
 	track?(): Collection<T>;
 	select(properties: string| string[]): Collection<T>

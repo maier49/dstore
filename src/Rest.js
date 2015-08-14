@@ -25,13 +25,8 @@ define([
 		//		want to use an alternate parse function for the parsing of data as well.
 		stringify: null,
 
-		constructor: function() {
-			// TODO - this is being initialized here because due to the way TS initializes variable the default on the
-			// prototype would be overridden
-			this.stringify = JSON.stringify;
-		},
-
 		_initialize: function() {
+			this.stringify = JSON.stringify;
 			this.autoEmitEvents = false;
 			this.inherited(arguments);
 		},
