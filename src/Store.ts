@@ -129,7 +129,7 @@ abstract class Store<T> extends Evented implements dstore.Collection<T>, Hash<an
 
 	protected _emitUpdateEvent(type: string) {
 		return function (result: Promise<any>, args: { beforeId: string | number }[]) {
-			const emit = (result: Promise<any>) => {
+			result.then((result: Promise<any>) => {
 				const event: Hash<any> = {
 					target: result,
 					type: type
@@ -139,14 +139,7 @@ abstract class Store<T> extends Evented implements dstore.Collection<T>, Hash<an
 					event['beforeId'] = options.beforeId;
 				}
 				this.emit(event);
-			};
-
-			if (result) {
-				result.then(emit);
-			}
-			//else {
-			//	emit(result);
-			//}
+			});
 
 			return result;
 		};
