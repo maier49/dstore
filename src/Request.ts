@@ -17,6 +17,12 @@ export interface RequestStoreArgs extends StoreArgs{
 	parse?: () => any;
 }
 
+export interface RequestResponse<T> {
+	data: dstore.FetchPromise<T>;
+	total: Promise<number>;
+	response: ResponsePromise<T>
+}
+
 abstract class Request<T> extends Store<T> implements dstore.Collection<T> {
 
 	/**
@@ -110,11 +116,7 @@ abstract class Request<T> extends Store<T> implements dstore.Collection<T> {
 		this.accepts = 'application/json';
 	}
 
-	protected _request(kwArgs: dstore.FetchArgs = {}): {
-		data: dstore.FetchPromise<T>;
-		total: Promise<number>;
-		response: ResponsePromise<T>
-	} {
+	protected _request(kwArgs: dstore.FetchArgs = {}): RequestResponse<T> {
 		// perform the actual query
 		const headers = <Hash<string>> lang.mixin(Object.create(this.headers), { Accept: this.accepts });
 
