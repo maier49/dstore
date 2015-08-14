@@ -48,7 +48,7 @@ class ConcreteRequest<T> extends Request<T> {
 		});
 	}
 
-	get(id: dstore.StoreItem): Promise<T> | void {
+	get(id: string | number): Promise<T> | void {
 		throw new Error('This Method is abstract');
 	}
 

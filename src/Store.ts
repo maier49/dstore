@@ -264,7 +264,7 @@ abstract class Store<T> extends Evented implements dstore.Collection<T>, Hash<an
 	 * @param id The identity to use to lookup the object
 	 * @return The object in the store that matches the given id.
 	 */
-	abstract get(id: dstore.StoreItem): Promise<T> | void;
+	abstract get(id: string | number): Promise<T> | void;
 
 	filter<T>(...args: any[]): dstore.Collection<T> {
 		return QueryMethod(<QueryMethodArgs<T>> {
@@ -309,7 +309,7 @@ abstract class Store<T> extends Evented implements dstore.Collection<T>, Hash<an
 		return object.get ? object.get(this.idProperty) : object[this.idProperty];
 	}
 
-	emit(event: EventObject) {
+	emit(event: dstore.ChangeEvent) {
 		return this.storage.emit(event);
 	}
 
@@ -332,7 +332,7 @@ abstract class Store<T> extends Evented implements dstore.Collection<T>, Hash<an
 	 *
 	 * @param id The identity to use to delete the object
 	 */
-	abstract remove(id: any): Promise<T | void>;
+	abstract remove(id: string | number): Promise<T | void>;
 
 	select<T>(args: string | string[]) : dstore.Collection<T> {
 		return QueryMethod(<QueryMethodArgs<T>> {

@@ -41,7 +41,7 @@ class ConcreteStore<T> extends Store<T> {
 		throw new Error('This Method is abstract');
 	}
 
-	get(id: dstore.StoreItem): Promise<T> | void {
+	get(id: string | number): Promise<T> | void {
 		throw new Error('This Method is abstract');
 	}
 
