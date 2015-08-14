@@ -26,15 +26,11 @@ class ConcreteStore<T> extends Store<T> {
 	}
 
 	add(object: T, directives?: dstore.PutDirectives):  Promise<T> {
-		return new Promise(function (resolve) {
-			resolve(object)
-		});
+		return Promise.resolve(object);
 	}
 
 	put(object: T, directives?: dstore.PutDirectives):  Promise<T> {
-		return new Promise(function (resolve) {
-			resolve(object)
-		});
+		return Promise.resolve(object);
 	}
 
 	fetch(args?: dstore.FetchArgs): dstore.FetchPromise<T> {
