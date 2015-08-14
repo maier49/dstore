@@ -113,7 +113,7 @@ abstract class Store<T> extends Evented implements dstore.Collection<T>, Hash<an
 			aspect.after(this, 'put', <any> this._emitUpdateEvent('update'));
 			aspect.after(this, 'remove', function (result, args) {
 				result.then(function (result: Promise<any>) {
-					store.emit(<any> {
+					store.emit({
 						type: 'delete',
 						id: args[0]
 					});
@@ -309,7 +309,7 @@ abstract class Store<T> extends Evented implements dstore.Collection<T>, Hash<an
 		return object.get ? object.get(this.idProperty) : object[this.idProperty];
 	}
 
-	emit(event: dstore.ChangeEvent) {
+	emit(event: dstore.ChangeEvent<T>) {
 		return this.storage.emit(event);
 	}
 

@@ -7,8 +7,8 @@ export interface ChangeEvent<T> extends EventObject {
 	id: any;
 	index?: number;
 	previousIndex?: number;
-	target: T;
-	totalLength: number;
+	target?: T;
+	totalLength?: number;
 	beforeId?: string | number
 }
 
