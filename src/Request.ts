@@ -184,7 +184,7 @@ abstract class Request<T> extends Store<T> implements dstore.Collection<T> {
 				const renderedArg = this._renderFilterParams(arg);
 				return ((arg.type === 'and' || arg.type === 'or') && arg.type !== type) ?
 					// need to observe precedence in the case of changing combination operators
-				'(' + renderedArg + ')' : renderedArg;
+					'(' + renderedArg + ')' : renderedArg;
 			}, this);
 			return [ renderedArgs.join(joinToken) ];
 		}
