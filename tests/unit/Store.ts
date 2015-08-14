@@ -46,33 +46,6 @@ class ConcreteStore<T> extends Store<T> {
 	}
 }
 
-class Model {
-	constructor (args?: {}) {
-		lang.mixin(this, {
-			_restore: function (Constructor: { new (arg: any): { restored: boolean } }) {
-				// use constructor based restoration
-				const restored = new Constructor(this);
-				restored.restored = true;
-				return restored;
-			},
-			createSubclass: null
-		}, args);
-	}
-	_restore(Constructor: { new (arg: any): { restored: boolean } }) {
-		// use constructor based restoration
-		const restored = new Constructor(this);
-		restored.restored = true;
-		return restored;
-	}
-	static createSubclass(...args: any[]) {
-		return {
-			extend: function () {
-				return { extended: true };
-			}
-		};
-	}
-}
-
 let store: ConcreteStore<any>;
 registerSuite({
 	name: 'dstore Store',
@@ -276,15 +249,4 @@ registerSuite({
 			assert.deepEqual(results, [ 0, 1, 2 ]);
 		});
 	},
-
-	'extends declare-based Model constructors and adds a _store reference on the prototype'() {
-		const store = new ConcreteStore({ Model: Model });
-		assert.notStrictEqual(store.Model, Model);
-		assert.isTrue((<any> store.Model).extended);
-	},
-
-	'does not extend Model constructors not based on declare'() {
-		const store = new ConcreteStore({Model: NonDeclareBasedModel});
-		assert.strictEqual(store.Model, NonDeclareBasedModel);
-	}
 });
