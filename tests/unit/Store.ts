@@ -98,18 +98,18 @@ registerSuite({
 	'filter'() {
 		const filter1 = { prop1: 'one' };
 		const expectedQueryLog1: any[] = [ {
-				type: 'filter', arguments: [ filter1 ], normalizedArguments: [ {
-					type: 'eq',
-					args: ['prop1', 'one']
-				} ]
-			} ];
-		const filter2 = function filterFunc() {};
-		const	expectedQueryLog2: any[] = expectedQueryLog1.concat({
-				type: 'filter', arguments: [ filter2 ], normalizedArguments: [ {
-					type: 'function',
-					args: [filter2]
-				} ]
-			});
+			type: 'filter', arguments: [ filter1 ], normalizedArguments: [ {
+				type: 'eq',
+				args: [ 'prop1', 'one' ]
+			} ]
+		} ];
+		const filter2 = function filterFunc(){};
+		const expectedQueryLog2: any[] = expectedQueryLog1.concat({
+			type: 'filter', arguments: [ filter2 ], normalizedArguments: [ {
+				type: 'function',
+				args: [ filter2 ]
+			} ]
+		});
 		let filteredCollection: dstore.Collection<any> = store.filter(filter1);
 		// deepEqual just won't work on the data in these
 		assert.equal(JSON.stringify(filteredCollection.queryLog), JSON.stringify(expectedQueryLog1));
@@ -137,7 +137,7 @@ registerSuite({
 		const expectedQueryLog3: any[] = expectedQueryLog2.concat({
 			type: 'sort',
 			arguments: [ sortObjectArray ],
-			normalizedArguments: [ [ sortObject, lang.mixin({ descending: false }, sortObjectArray[ 1 ]) ] ]
+			normalizedArguments: [ [ sortObject, lang.mixin({ descending: false }, sortObjectArray[1]) ] ]
 		});
 		const expectedQueryLog4 = expectedQueryLog3.concat({
 			type: 'sort', arguments: [ comparator ], normalizedArguments: [ comparator ]
