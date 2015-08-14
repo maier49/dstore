@@ -20,25 +20,24 @@ class NonDeclareBasedModel {
 }
 
 class ConcreteStore<T> extends Store<T> {
-
-	fetchRange(args: dstore.FetchRangeArgs): dstore.FetchPromise<T> {
-		throw new Error('This Method is abstract');
-	}
-
 	add(object: T, directives?: dstore.PutDirectives):  Promise<T> {
 		return Promise.resolve(object);
 	}
 
-	put(object: T, directives?: dstore.PutDirectives):  Promise<T> {
-		return Promise.resolve(object);
+	get(id: string | number): Promise<T> | void {
+		throw new Error('This Method is abstract');
 	}
 
 	fetch(args?: dstore.FetchArgs): dstore.FetchPromise<T> {
 		throw new Error('This Method is abstract');
 	}
 
-	get(id: string | number): Promise<T> | void {
+	fetchRange(args: dstore.FetchRangeArgs): dstore.FetchPromise<T> {
 		throw new Error('This Method is abstract');
+	}
+
+	put(object: T, directives?: dstore.PutDirectives):  Promise<T> {
+		return Promise.resolve(object);
 	}
 
 	remove(id: any): Promise<T | void> {

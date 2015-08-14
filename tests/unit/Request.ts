@@ -42,14 +42,14 @@ class ConcreteRequest<T> extends Request<T> {
 		throw new Error('This Method is abstract');
 	}
 
+	get(id: string | number): Promise<T> | void {
+		throw new Error('This Method is abstract');
+	}
+
 	put(object: T, directives?: dstore.PutDirectives):  Promise<T> {
 		return new Promise(function (resolve) {
 			resolve(object)
 		});
-	}
-
-	get(id: string | number): Promise<T> | void {
-		throw new Error('This Method is abstract');
 	}
 
 	remove(id: any): Promise<T | void> {
