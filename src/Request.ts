@@ -175,7 +175,7 @@ abstract class Request<T> extends Store<T> implements dstore.Collection<T> {
 			return [ '' ];
 		}
 		if (type === 'string') {
-			return [ args[ 0 ] ];
+			return [ args[0] ];
 		}
 		if (type === 'and' || type === 'or') {
 			const joinToken = type === 'and' ? '&' : '|';
@@ -188,7 +188,7 @@ abstract class Request<T> extends Store<T> implements dstore.Collection<T> {
 			}, this);
 			return [ renderedArgs.join(joinToken) ];
 		}
-		let target = args[ 1 ];
+		let target = args[1];
 		if (target) {
 			if (target._renderUrl) {
 				// detected nested query, and render the url inside as an argument
@@ -197,7 +197,7 @@ abstract class Request<T> extends Store<T> implements dstore.Collection<T> {
 				target = '(' + target + ')';
 			}
 		}
-		const encodedFilterArg = encodeURIComponent(args[ 0 ]);
+		const encodedFilterArg = encodeURIComponent(args[0]);
 		const encodedFilterType = (type === 'eq' ? '' : type + '=');
 		const encodedTarget = encodeURIComponent(target);
 		return [ encodedFilterArg + '=' + encodedFilterType + encodedTarget ];
