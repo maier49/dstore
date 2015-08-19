@@ -70,23 +70,22 @@ const requestHeaders: { [ name: string ]: string } = {
 	'test-override': 'overridden'
 };
 
-function runCollectionTest<T>(collection: dstore.Collection<T>, rangeArgs: dstore.FetchRangeArgs | RequestOptions, expected?: RequestOptions) {
+function runCollectionTest<T>(collection: dstore.Collection<T>, expected: RequestOptions, rangeArgs?: dstore.FetchRangeArgs) {
 	const expectedResults: { [ name: string ]: number | string }[] = [
 		{ id: 1, name: 'one' },
 		{ id: 2, name: 'two' }
 	];
 	mockRequestProvider.setResponseText(JSON.stringify(expectedResults));
 	let resultsPromise: dstore.FetchPromise<any>;
-	if (!expected) {
-		expected = <RequestOptions> rangeArgs;
-		resultsPromise = collection.fetch();
-	}
-	else {
-		const { start, end } = <dstore.FetchRangeArgs> rangeArgs;
+	if (rangeArgs) {
+		const { start, end } = rangeArgs;
 		mockRequestProvider.setResponseHeaders({
 			'Content-Range': start + '-' + end + '/' + expectedResults.length
 		});
-		resultsPromise = collection.fetchRange(<dstore.FetchRangeArgs> rangeArgs);
+		resultsPromise = collection.fetchRange(rangeArgs);
+	}
+	else {
+		resultsPromise = collection.fetch();
 	}
 	return resultsPromise.then(function (results) {
 		expected.headers && mockRequestProvider.assertRequestHeaders(expected.headers);
@@ -164,15 +163,15 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => ConcreteR
 		},
 
 		'filter object': function () {
-			const filter = { prop1: 'Prop1Value', prop2: 'Prop2Value' };
-			return runCollectionTest(store.filter(filter), { queryParams: filter });
+			const filter: Hash<string> = { prop1: 'Prop1Value', prop2: 'Prop2Value' };
+			return runCollectionTest(store.filter(filter), { query: filter });
 		},
 
 		'filter builder': function () {
 			const filter = new store.Filter();
 			const betweenTwoAndFour = filter.gt('id', 2).lt('price', 5);
 			return runCollectionTest(store.filter(betweenTwoAndFour), {
-				queryParams: {
+				query: {
 					id: 'gt=2',
 					price: 'lt=5'
 				}
@@ -183,7 +182,7 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => ConcreteR
 			const filter = new store.Filter();
 			const betweenTwoAndFour = filter.ne('id', 2).or(filter.eq('foo', true), filter.eq('foo'));
 			return runCollectionTest(store.filter(betweenTwoAndFour), {
-				queryParams: {
+				query: {
 					id: 'ne=2|foo=true|foo=undefined'
 				}
 			});
@@ -194,7 +193,7 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => ConcreteR
 			const innerFilter = new store.Filter().eq('foo', true);
 			const nestedFilter = filter[ 'in' ]('id', store.filter(innerFilter).select('id'));
 			return runCollectionTest(store.filter(nestedFilter), {
-				queryParams: {
+				query: {
 					id: 'in=(/mockRequest/?foo=true&select(id))'
 				}
 			});
@@ -211,7 +210,7 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => ConcreteR
 				descending: true
 			});
 			return runCollectionTest(sortedCollection, {
-				queryParams: {
+				query: {
 					'sort(-prop1,+prop2,-prop3)': ''
 				}
 			});
@@ -230,7 +229,7 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => ConcreteR
 				descending: true
 			});
 			return runCollectionTest(sortedCollection, {
-				queryParams: {
+				query: {
 					'sort-param': '-prop1,+prop2,-prop3'
 				}
 			});
@@ -250,7 +249,7 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => ConcreteR
 				descending: true
 			});
 			return runCollectionTest(sortedCollection, {
-				queryParams: {
+				query: {
 					'sort(--prop1,++prop2,--prop3)': ''
 				}
 			});
@@ -258,7 +257,7 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => ConcreteR
 		'select': function () {
 			const selectCollection = store.select([ 'prop1', 'prop2' ]);
 			return runCollectionTest(selectCollection, {
-				queryParams: {
+				query: {
 					'select(prop1,prop2)': ''
 				}
 			});
@@ -267,55 +266,55 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => ConcreteR
 			store.selectParam = 'select-param';
 			const selectCollection = store.select([ 'prop1', 'prop2' ]);
 			return runCollectionTest(selectCollection, {
-				queryParams: {
+				query: {
 					'select-param': 'prop1,prop2'
 				}
 			});
 		},
 		'range': function () {
-			return runCollectionTest(store, { start: 15, end: 25 }, <any> {
-				queryParams: {
-					'limit(10,15)': ''
-				}
-			});
+			return runCollectionTest(store, {
+					query: {
+						'limit(10,15)': ''
+					}
+				}, { start: 15, end: 25 });
 		},
 		'range with rangeParam': function () {
 			store.rangeStartParam = 'start';
 			store.rangeCountParam = 'count';
-			return runCollectionTest(store, { start: 15, end: 25 }, <any> {
-				queryParams: {
-					'start': '15',
-					'count': '10'
-				}
-			});
+			return runCollectionTest(store, {
+					query: {
+						'start': '15',
+						'count': '10'
+					}
+				}, { start: 15, end: 25 });
 		},
 		'range with headers': function () {
 			store.useRangeHeaders = true;
-			return runCollectionTest(store, { start: 15, end: 25 }, {
+			return runCollectionTest(store, {
 				headers: {
 					'Range': 'items=15-24'
 				}
-			});
+			}, { start: 15, end: 25 });
 		},
 
 		'range with headers without end': function () {
 			store.useRangeHeaders = true;
-			return runCollectionTest(store, { start: 15, end: Infinity }, {
+			return runCollectionTest(store, {
 				headers: {
 					'Range': 'items=15-Infinity'
 				}
-			});
+			}, { start: 15, end: Infinity });
 		},
 
 		'filter+sort+fetchRange': function () {
 			const filter = { prop1: 'Prop1Value', prop2: 'Prop2Value' };
 			const collection = store.filter(filter).sort('prop1');
-			return runCollectionTest(collection, { start: 15, end: 25 }, <any> {
-				queryParams: lang.mixin({}, filter, {
+			return runCollectionTest(collection, {
+				query: <Hash<string>> lang.mixin({}, filter, {
 					'limit(10,15)': '',
 					'sort(+prop1)': ''
 				})
-			});
+			}, { start: 15, end: 25 });
 		},
 
 		// TODO - convert SimpleQuery and uncomment

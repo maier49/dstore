@@ -347,8 +347,6 @@ abstract class Request<T> extends Store<T> implements dstore.Collection<T> {
 		// outside of strict JSON parsing, you can provide dojo/_base/json.fromJson as the parse function
 		return JSON.parse(data);
 	}
-
-;
 }
 
 export default Request;

@@ -68,8 +68,10 @@ export function assertRequestHeaders(expectedHeaders: Hash<string>) {
 }
 
 export function assertQuery(expectedParams: UrlSearchParams) {
-	for (var name in expectedParams) {
-		assert.isTrue(name in latestQuery);
-		assert.equal(expectedParams.get(name).toString(), latestQuery.get(name));
+	const expectedParamsKeys = expectedParams.keys();
+	const latestQueryKeys = latestQuery.keys();
+	for (let i = 0; i < expectedParamsKeys.length; i++) {
+		assert.include(latestQueryKeys, expectedParamsKeys[i]);
+		assert.equal(expectedParams.get(expectedParamsKeys[i]), latestQuery.get(expectedParamsKeys[i]));
 	}
 }

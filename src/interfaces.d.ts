@@ -26,7 +26,7 @@ export interface Collection<T> {
 	forEach(callback: (item: T, index: number, collection: T[]) => void, thisObject?: any): Promise<T[]>;
 	get(id: string | number): Promise<T> | void;
 	getIdentity(object: { [ name: string ]: any, get?: (name: string) => any }): any;
-	on(type: string, listener: (event: { type: string, beforeId: string | number }) => void): Handle;
+	on(type: string, listener: (event: ChangeEvent<T>) => void): Handle;
 	put(object: T, options?: {}): Promise<T>;
 	remove(id: string | number): Promise<T | void>;
 	sort(property: string | { property: string }[] | { (a: T, b: T): number; }, descending?: boolean): Collection<T>;

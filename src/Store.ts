@@ -306,7 +306,7 @@ abstract class Store<T> extends Evented implements dstore.Collection<T>, Hash<an
 		return this.storage.emit(event);
 	}
 
-	on(type: string, listener: (event: { type: string, beforeId: string | number }) => void) {
+	on(type: string, listener: (event: dstore.ChangeEvent<T>) => void) {
 		return this.storage.on(type, listener);
 	}
 

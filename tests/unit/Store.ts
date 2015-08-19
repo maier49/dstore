@@ -41,7 +41,7 @@ class ConcreteStore<T> extends Store<T> {
 	}
 
 	remove(id: any): Promise<T | void> {
-		throw new Error('This Method is abstract');
+		return Promise.resolve(id);
 	}
 }
 
@@ -171,47 +171,37 @@ registerSuite({
 		const methodCalls: string[] = [],
 			events: string[] = [];
 
+		store = new ConcreteStore();
 		// rely on autoEventEmits
-		const store = new  ConcreteStore();
-		function countMethodCall(method: string, object: any) {
-			methodCalls.push(method);
-			return object;
+		function pushEvent(event: EventObject) {
+			events.push(event.type);
 		}
-		store.put = countMethodCall.bind(null, 'put');
-		store.add = countMethodCall.bind(null, 'add');
-		store.remove = countMethodCall.bind(null, 'remove');
+		store.on('add', pushEvent);
+		store.on('delete', pushEvent);
+		store.on('update', pushEvent);
 
-		store.on('add', function (event: EventObject) {
-			events.push(event.type);
+		return Promise.all([
+			store.put({method: 'put'}),
+			store.add({method: 'add'}),
+			store.remove(1)
+		]).then(function (results) {
+			assert.strictEqual(results[0].method, 'put');
+			assert.strictEqual(results[1].method, 'add');
+			assert.strictEqual(results[2], 1);
+			assert.deepEqual( events, ['update', 'add', 'delete']);
 		});
-		// test comma delimited as well
-		store.on('delete', function (event: EventObject) {
-			events.push(event.type);
-		});
-
-		store.on('update', function (event: EventObject) {
-			events.push(event.type);
-		});
-
-		store.put({});
-		store.add({});
-		store.remove(1);
-
-		assert.deepEqual(methodCalls, ['put', 'add', 'remove']);
-		assert.deepEqual.bind(this, events, ['update', 'add', 'delete']);
 	},
 
 	'events with beforeId'() {
 		const store = new ConcreteStore(),
 			beforeIds: Array<string | number> = [];
 
-		store.on('add', function (event) {
+		function pushBeforeId(event: dstore.ChangeEvent<any>) {
 			beforeIds.push(event.beforeId);
-		});
+		}
+		store.on('add', pushBeforeId);
 
-		store.on('update', function (event) {
-			beforeIds.push(event.beforeId);
-		});
+		store.on('update', pushBeforeId);
 
 		return store.add({}, <any> { beforeId: 123 }).then(function () {
 			return store.put({}, <any> { beforeId: 321 })
@@ -220,24 +210,10 @@ registerSuite({
 		});
 	},
 
-	'emit should catch errors thrown by listeners'() {
-		const store = new ConcreteStore(),
-			testEmit = lang.lateBind(store, 'emit', 'test-event');
-
-		assert.doesNotThrow(testEmit);
-
-		store.on('test-event', function () {
-			throw new Error('listener error');
-		});
-		assert.doesNotThrow(testEmit);
-	},
-
 	forEach() {
 		const store = new ConcreteStore<any>();
 		store.fetch = function (args?: dstore.FetchArgs) {
-			return new Promise(function (resolve) {
-				resolve([ 0, 1, 2 ]);
-			});
+			return Promise.resolve([ 0, 1, 2 ]);
 		};
 		const results: any[] = [];
 		return store.forEach(function (item: any, i: number, instance: any[]) {
