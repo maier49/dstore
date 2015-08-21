@@ -29,7 +29,7 @@ function runHeaderTest(method: string, args: any[]) {
 
 let nodeData_1_1: string;
 let registryHandle: Handle;
-const tests = createRequestTests(Rest, store);
+const tests = createRequestTests(Rest);
 lang.mixin(tests, {
 	name: 'dstore Rest',
 
@@ -152,8 +152,8 @@ lang.mixin(tests, {
 		store.defaultNewToStart = true;
 		return store.put({ id: 1, name: 'one' }, { beforeId: 123 }).then(function () {
 			mockRequestProvider.assertRequestHeaders({
-				'Put-Before': 123,
-				'Put-Default-Position': null
+				'Put-Before': '123',
+				'Put-Default-Position': ''
 			});
 		}).then(function () {
 			return store.put({ id: 2, name: 'two' }, { beforeId: null });

@@ -43,6 +43,8 @@ class ConcreteStore<T> extends Store<T> {
 	remove(id: any): Promise<T | void> {
 		return Promise.resolve(id);
 	}
+
+	stringify() {}
 }
 
 let store: ConcreteStore<any>;

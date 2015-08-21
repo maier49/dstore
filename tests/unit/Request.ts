@@ -52,6 +52,8 @@ class ConcreteRequest<T> extends Request<T> {
 	remove(id: any): Promise<T | void> {
 		throw new Error('This Method is abstract');
 	}
+
+	stringify(){}
 }
 
 let store: ConcreteRequest<any>;
@@ -102,7 +104,8 @@ interface TestItem {
 	describe: () => string;
 	someProperty? : string;
 }
-function createRequestTests(Store: new (options?: RequestStoreArgs) => ConcreteRequest<any>) {
+
+export function createRequestTests(Store: new (options?: RequestStoreArgs) => Request<any>) {
 	return {
 		name: 'dstore Request',
 

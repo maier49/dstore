@@ -1,4 +1,4 @@
-import { Handle, EventObject } from 'dojo-core/interfaces';
+import { Handle, EventObject, Hash } from 'dojo-core/interfaces';
 import Promise from 'dojo-core/Promise';
 
 // TODO: tailor these as necessary (many were adapted from dstore.d.ts in 1.x)
@@ -87,5 +87,8 @@ export interface PutDirectives {
 	id?: string | number;
 	before?: {};
 	parent?: {};
-	overwrite?: Boolean;
+	overwrite?: boolean;
+	beforeId?: string | number;
+	incremental?: boolean;
+	headers?: Hash<string>;
 }

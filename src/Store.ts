@@ -66,11 +66,6 @@ abstract class Store<T> extends Evented implements dstore.Collection<T>, Hash<an
 
 	storage: Evented;
 
-	/**
-	 * For stores that serialize data (to send to a server, for example) the stringify
-	 * function can be specified to control how objects are serialized to strings
-	 */
-	stringify: () => any;
 
 	constructor(options?: StoreArgs) {
 		super();
@@ -374,6 +369,12 @@ abstract class Store<T> extends Evented implements dstore.Collection<T>, Hash<an
 			}
 		}).apply(this, args);
 	}
+
+	/**
+	 * For stores that serialize data (to send to a server, for example) the stringify
+	 * function can be specified to control how objects are serialized to strings
+	 */
+	abstract stringify(...args: any[]): any;
 }
 
 export default Store;
