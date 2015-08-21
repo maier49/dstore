@@ -50,7 +50,7 @@ export function assertHttpMethod(expectedMethod: string) {
 	assert.strictEqual(latestOptions.method || 'GET', expectedMethod);
 }
 
-export function assertRequestHeaders(expectedHeaders: Hash<string| number>) {
+export function assertRequestHeaders(expectedHeaders: Hash<string>) {
 	for (var name in expectedHeaders) {
 		var lowerCaseName = name.toLowerCase(),
 			value = expectedHeaders[name];

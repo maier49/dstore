@@ -201,10 +201,9 @@ define([
 
 				var observations = [];
 				// temporarily hide this so we don't load everything
-				var fetchSync = bigFiltered.fetchSync;
 				bigFiltered.fetchSync = null;
 				var bigObserved = bigFiltered.track();
-				bigFiltered.fetchSync = fetchSync;
+				delete bigFiltered.fetchSync;
 				bigObserved.on('update', function (event) {
 					observations.push(event);
 					console.log(' observed: ', event);
@@ -243,10 +242,9 @@ define([
 					item,
 					bigObserved;
 				// temporarily hide this so we don't load everything
-				var fetchSync = bigFiltered.fetchSync;
 				bigFiltered.fetchSync = null;
  				bigObserved = bigFiltered.track();
- 				bigFiltered.fetchSync = fetchSync;
+ 				delete bigFiltered.fetchSync;
 
 				var assertObservationIs = function (expectedObservation) {
 						expectedObservation = lang.delegate(expectedObservation);
