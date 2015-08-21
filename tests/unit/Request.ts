@@ -36,9 +36,8 @@ class Model {
 	}
 }
 
-
 class ConcreteRequest<T> extends Request<T> {
-	add(object: any, directives?: dstore.PutDirectives):  any {
+	add(object: any, directives?: dstore.PutDirectives): any {
 		throw new Error('This Method is abstract');
 	}
 
@@ -46,10 +45,8 @@ class ConcreteRequest<T> extends Request<T> {
 		throw new Error('This Method is abstract');
 	}
 
-	put(object: T, directives?: dstore.PutDirectives):  Promise<T> {
-		return new Promise(function (resolve) {
-			resolve(object)
-		});
+	put(object: T, directives?: dstore.PutDirectives): Promise<T> {
+		return Promise.resolve(object);
 	}
 
 	remove(id: any): Promise<T | void> {
@@ -59,19 +56,8 @@ class ConcreteRequest<T> extends Request<T> {
 
 let store: ConcreteRequest<any>;
 
-const globalHeaders: { [ name: string ]: string } = {
-
-	'test-global-header-a': 'true',
-	'test-global-header-b': 'yes'
-};
-const requestHeaders: { [ name: string ]: string } = {
-	'test-local-header-a': 'true',
-	'test-local-header-b': 'yes',
-	'test-override': 'overridden'
-};
-
 function runCollectionTest<T>(collection: dstore.Collection<T>, expected: RequestOptions, rangeArgs?: dstore.FetchRangeArgs) {
-	const expectedResults: { [ name: string ]: number | string }[] = [
+	const expectedResults: Hash<number | string>[] = [
 		{ id: 1, name: 'one' },
 		{ id: 2, name: 'two' }
 	];
@@ -95,8 +81,8 @@ function runCollectionTest<T>(collection: dstore.Collection<T>, expected: Reques
 		// because the store converts results into model instances with additional members.
 		assert.strictEqual(results.length, expectedResults.length);
 		for (let i = 0; i < results.length; ++i) {
-			const result: { [ name: string ]: number | string } = results[i];
-			const expectedResult: { [ name: string ]: number | string } = expectedResults[i];
+			const result: Hash<number | string> = results[i];
+			const expectedResult: Hash<number | string> = expectedResults[i];
 			for (let key in expectedResult) {
 				assert.strictEqual(result[key], expectedResult[key]);
 			}
@@ -111,6 +97,11 @@ function runCollectionTest<T>(collection: dstore.Collection<T>, expected: Reques
 
 let registryHandle: Handle;
 let treeTestRootData: string;
+interface TestItem {
+	name: string;
+	describe: () => string;
+	someProperty? : string;
+}
 function createRequestTests(Store: new (options?: RequestStoreArgs) => ConcreteRequest<any>) {
 	return {
 		name: 'dstore Request',
@@ -131,7 +122,6 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => ConcreteR
 			mockRequestProvider.setResponseHeaders({});
 			store = new Store({
 				target: '/mockRequest/',
-				headers: globalHeaders,
 				Model: Model
 			});
 			store.Model.prototype.describe = function() {
@@ -142,7 +132,7 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => ConcreteR
 		'filter': function () {
 			mockRequestProvider.setResponseText(treeTestRootData);
 
-			return store.filter<{ name: string; describe: () => string; someProperty: string }>('data/treeTestRoot').fetch().then(function (results) {
+			return store.filter<TestItem>('data/treeTestRoot').fetch().then(function (results) {
 				const object = results[0];
 				assert.strictEqual(object.name, 'node1');
 				assert.strictEqual(object.describe(), 'name is node1');
@@ -154,7 +144,7 @@ function createRequestTests(Store: new (options?: RequestStoreArgs) => ConcreteR
 			mockRequestProvider.setResponseText(treeTestRootData);
 
 			let i = 0;
-			return store.filter<{ name: string, describe: () => string }>('data/treeTestRoot').forEach(function (object) {
+			return store.filter<TestItem>('data/treeTestRoot').forEach(function (object) {
 				i++;
 				assert.strictEqual(object.name, 'node' + i);
 				// the method we added

@@ -55,8 +55,8 @@ export interface FetchArgs {
 }
 
 export interface FetchRangeArgs extends FetchArgs {
-	start?: number;
-	end?: number;
+	start: number;
+	end: number;
 }
 export interface SortOption {
 	descending?: boolean;

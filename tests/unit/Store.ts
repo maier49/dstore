@@ -20,7 +20,7 @@ class NonDeclareBasedModel {
 }
 
 class ConcreteStore<T> extends Store<T> {
-	add(object: T, directives?: dstore.PutDirectives):  Promise<T> {
+	add(object: T, directives?: dstore.PutDirectives): Promise<T> {
 		return Promise.resolve(object);
 	}
 
@@ -36,7 +36,7 @@ class ConcreteStore<T> extends Store<T> {
 		throw new Error('This Method is abstract');
 	}
 
-	put(object: T, directives?: dstore.PutDirectives):  Promise<T> {
+	put(object: T, directives?: dstore.PutDirectives): Promise<T> {
 		return Promise.resolve(object);
 	}
 

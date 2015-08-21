@@ -41,7 +41,7 @@ export default class Filter implements Hash<any> {
 		filter.args = [key, target];
 		if (this instanceof Filter && this.type) {
 			// we are chaining, so combine with an and operator
-			return this.and(this, filter);
+			return this.and(filter);
 		}
 		return filter;
 	}
