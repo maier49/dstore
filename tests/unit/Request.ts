@@ -56,7 +56,7 @@ class ConcreteRequest<T> extends Request<T> {
 	stringify(){}
 }
 
-let store: ConcreteRequest<any>;
+let store: Request<any>;
 
 function runCollectionTest<T>(collection: dstore.Collection<T>, expected: RequestOptions, rangeArgs?: dstore.FetchRangeArgs) {
 	const expectedResults: Hash<number | string>[] = [
@@ -129,7 +129,7 @@ export function createRequestTests(Store: new (options?: RequestStoreArgs) => Re
 			});
 			store.Model.prototype.describe = function() {
 				return "name is " + this.name;
-			}
+			};
 		},
 
 		'filter': function () {
@@ -380,4 +380,4 @@ export function createRequestTests(Store: new (options?: RequestStoreArgs) => Re
 		}
 	};
 }
-registerSuite(createRequestTests(<any> ConcreteRequest));
+registerSuite(createRequestTests(<any>ConcreteRequest));

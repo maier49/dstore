@@ -9,6 +9,33 @@ import * as mockRequestProvider from './mockRequestProvider';
 import * as dstore from 'src/interfaces';
 import Rest from 'src/Rest';
 
+class Model {
+	constructor(args?: {}) {
+		lang.mixin(this, {
+			_restore: function (Constructor: { new (arg: any): { restored: boolean } }) {
+				// use constructor based restoration
+				const restored = new Constructor(this);
+				restored.restored = true;
+				return restored;
+			},
+			createSubclass: null
+		}, args);
+	}
+
+	_restore(Constructor: { new (arg: any): { restored: boolean } }) {
+		// use constructor based restoration
+		const restored = new Constructor(this);
+		restored.restored = true;
+		return restored;
+	}
+
+	name: string;
+
+	describe() {
+		return 'name is ' + this.name;
+	}
+}
+
 const globalHeaders: Hash<string> = {
 	'test-global-header-a': 'true',
 	'test-global-header-b': 'yes'
@@ -18,15 +45,14 @@ const requestHeaders: Hash<string> = {
 	'test-local-header-b': 'yes',
 	'test-override': 'overridden'
 };
-let store: Rest<any>;
 
+let store: Rest<any>;
 function runHeaderTest(method: string, args: any[]) {
 	return store[method].apply(store, args).then(function () {
 		mockRequestProvider.assertRequestHeaders(requestHeaders);
 		mockRequestProvider.assertRequestHeaders(globalHeaders);
 	});
 }
-
 let nodeData_1_1: string;
 let registryHandle: Handle;
 const tests = createRequestTests(Rest);
@@ -38,6 +64,18 @@ lang.mixin(tests, {
 		return request.get((<any> require).toUrl('tests/unit/data/node1.1')).then(function (response: any) {
 			nodeData_1_1 = response.data;
 		});
+	},
+
+	beforeEach: function () {
+		mockRequestProvider.setResponseText('{}');
+		mockRequestProvider.setResponseHeaders({});
+		store = new Rest({
+			target: '/mockRequest/',
+			Model: Model
+		});
+		store.Model.prototype.describe = function() {
+			return "name is " + this.name;
+		};
 	},
 
 	'get': function () {
